@@ -12,7 +12,6 @@ APTOS_FAUCET_API_PORT = 8000
 
 WAIT_DISABLE = None
 
-
 def run(plan, args):
     files = plan.upload_files(
         src="github.com/kurtosis-tech/aptos-package/testnet_files",
@@ -68,8 +67,12 @@ def run(plan, args):
         name="mint.key",
     )
 
-    plan.print("Validator running on ip: %s" % validator_service.ip_address)
-
+    validator_service_url = "%s://%s:%d" % (
+        APTOS_VALIDATOR_API_PROTOCOL_NAME,
+        validator_service.ip_address,
+        APTOS_VALIDATOR_API_PORT
+    )
+    plan.print("Validator running with url %s" % validator_service_url)
     faucet_service = plan.add_service(
         name=APTOS_FAUCET_SERVICE_NAME,
         config=ServiceConfig(
@@ -84,25 +87,13 @@ def run(plan, args):
             env_vars={
             },
             cmd=[
-                "/bin/bash",
-                "-c",
-                """
-                    for i in {1..10}; do
-                      if [[ ! -s /opt/aptos/var/mint.key ]]; then
-                        echo 'Validator has not populated mint.key yet. Is it running?'
-                        sleep 1
-                      else
-                        sleep 1
-                        /usr/local/bin/aptos-faucet \\
-                          --chain-id TESTING \\
-                          --mint-key-file-path /opt/aptos/var/mint.key \\
-                          --server-url http://%s:8080
-                        echo 'Faucet failed to run likely due to the Validator still starting. Will try again.'
-                      fi
-                    done
-                    exit 1
-                """ % validator_service.ip_address
-
+                "/usr/local/bin/aptos-faucet",
+                "--chain-id",
+                "TESTING",
+                "--mint-key-file-path",
+                "/opt/aptos/var/mint.key",
+                "--server-url",
+                "%s" % validator_service_url
             ],
             files={
                 "/opt/aptos/var/": mint_key,
