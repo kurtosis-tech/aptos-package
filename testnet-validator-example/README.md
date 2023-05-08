@@ -10,7 +10,7 @@ If you have [Kurtosis installed][install-kurtosis], run:
 
 <!-- TODO replace YOURUSER and THISREPO with the correct values -->
 ```bash
-kurtosis run github.com/kurtosistech/aptos-package/testnet-validator --enclave aptos
+kurtosis run github.com/kurtosistech/aptos-package/testnet-validator-example/testnet-validator --enclave aptos
 ```
 
 If you don't have Kurtosis installed, [click here to run this package on the Kurtosis playground](https://gitpod.io/#KURTOSIS_PACKAGE_LOCATOR=/https://github.com/kurtosis-tech/playground-gitpod).
@@ -83,7 +83,7 @@ Kurtosis packages can be composed inside other Kurtosis packages. To use this pa
 First, import this package by adding the following to the top of your Starlark file:
 
 ```python
-this_package = import_module("github.com/kurtosistech/aptos-package/main.star")
+this_package = import_module("github.com/kurtosistech/aptos-package/testnet-validator-example/main.star")
 ```
 
 Then, call the this package's `run` function somewhere in your Starlark script:
