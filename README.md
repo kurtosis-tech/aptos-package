@@ -1,6 +1,8 @@
 My Package
 ============
-This is a [Kurtosis package](https://docs.kurtosis.com/concepts-reference/packages). It doesn't do much now, but it will soon!
+This is an Aptos Testnet Validator [Kurtosis package](https://docs.kurtosis.com/concepts-reference/packages). 
+It creates a local testnet with 1 validator and a Faucet to generate coins. 
+For more background on local testnets [reference Aptos' docs](https://aptos.dev/nodes/local-testnet/run-a-local-testnet). 
 
 Run this package
 ----------------
@@ -8,49 +10,70 @@ If you have [Kurtosis installed][install-kurtosis], run:
 
 <!-- TODO replace YOURUSER and THISREPO with the correct values -->
 ```bash
-kurtosis run github.com/YOURUSER/THISREPO
+kurtosis run github.com/kurtosistech/aptos-package/testnet-validator --enclave aptos
 ```
 
-<!-- TODO Add a URL-encoded version of github.com/YOURUSER/THISREPO to right after "KURTOSIS_PACKAGE_LOCATOR=" in the link below -->
-<!-- TODO You can URL-encode a string using https://www.urlencoder.org/ -->
 If you don't have Kurtosis installed, [click here to run this package on the Kurtosis playground](https://gitpod.io/#KURTOSIS_PACKAGE_LOCATOR=/https://github.com/kurtosis-tech/playground-gitpod).
-
 To blow away the created [enclave][enclaves-reference], run `kurtosis clean -a`.
 
-#### Configuration
+### Interacting with the Validator
 
-<details>
-    <summary>Click to see configuration</summary>
+After running the package (as shown above) you can query the validator using the ephemeral port assigned by kurtosis.
+The assigned ephemeral port is printed at the end of the run command or can be found by invoking `enclave inspect` on 
+the enclave (in this case named `aptos`):
 
-You can configure this package using the JSON structure below. The default values for each parameter are shown.
+```bash
+kurtosis enclave inspect aptos 
+```
 
-NOTE: the `//` lines are not valid JSON; you will need to remove them!
+You'll get an output similar to this, but with different port assignments:
 
-<!-- TODO Parameterize your package as you prefer; see https://docs.kurtosis.com/next/concepts-reference/args for more -->
-```javascript
+```bash
+$ kurtosis enclave inspect aptos 
+Name:            aptos
+UUID:            82b2752167a5
+Status:          RUNNING
+Creation Time:   Mon, 08 May 2023 13:32:16 EDT
+
+========================================= Files Artifacts =========================================
+UUID           Name
+ffaf30896868   mint.key
+
+========================================== User Services ==========================================
+UUID           Name        Ports                                                Status
+a21e5f1d25b5   faucet      faucet_port: 8000/tcp -> http://127.0.0.1:64942      RUNNING
+ca3a5c91e92a   validator   validator_port: 8080/tcp -> http://127.0.0.1:64629   RUNNING
+
+```
+
+You can query the Validator from outside the enclave and verify that it's incrementing the block height and epochs:
+```
+curl 'localhost:64629/v1/'
 {
-    // The name to print
-    "name": "John Snow"
+    "chain_id": 4,
+    "epoch": "4",
+    "ledger_version": "650",
+    "oldest_ledger_version": "0",
+    "ledger_timestamp": "1683566521529836",
+    "node_role": "validator",
+    "oldest_block_height": "0",
+    "block_height": "325",
+    "git_hash": "04ba6c70f91244fb510bf7a2cff9fd02782efd9a"
+}
+
+```
+
+You can also verify that the Faucet is generating coins by query the validator accounts endpoint:
+```
+curl 'localhost:64629/v1/accounts/0xa550c18'
+{
+    "sequence_number": "2",
+    "authentication_key": "0x92c607ddd90ca90d766726d5051948777f00d4c03b08efae6513ae1586f16184"
 }
 ```
+Notice that sequence number has been incremented to 2, 
+indicating this is the second transaction from the Faucet minting account `0xa550c18`.
 
-The arguments can then be passed in to `kurtosis run`.
-
-For example:
-
-<!-- TODO replace YOURUSER and THISREPO with the correct values -->
-```bash
-kurtosis run github.com/YOURUSER/THISREPO '{"name":"Maynard James Keenan"}'
-```
-
-You can also store the JSON args in a file, and use command expansion to slot them in:
-
-<!-- TODO replace YOURUSER and THISREPO with the correct values -->
-```bash
-kurtosis run github.com/YOURUSER/THISREPO "$(cat args.json)"
-```
-
-</details>
 
 Use this package in your package
 --------------------------------
@@ -60,7 +83,7 @@ Kurtosis packages can be composed inside other Kurtosis packages. To use this pa
 First, import this package by adding the following to the top of your Starlark file:
 
 ```python
-this_package = import_module("github.com/YOURUSER/THISREPO/main.star")
+this_package = import_module("github.com/kurtosistech/aptos-package/main.star")
 ```
 
 Then, call the this package's `run` function somewhere in your Starlark script:
