@@ -13,12 +13,8 @@ APTOS_FAUCET_API_PORT = 8000
 WAIT_DISABLE = None
 
 def run(plan, args):
-    files = plan.upload_files(
-        src="github.com/kurtosis-tech/aptos-package/testnet_files",
-        name="testnet_files"
-    )
 
-    # Create the validator and mount the validator node template:
+    # Create the validator in a local testnet:
     validator_service = plan.add_service(
         name=APTOS_VALIDATOR_SERVICE_NAME,
         config=ServiceConfig(
@@ -37,12 +33,7 @@ def run(plan, args):
                 "--test",
                 "--test-dir",
                 "/opt/aptos/var/",
-                "--config",
-                "/opt/aptos/var/validator_node_template.yaml"
             ],
-            files={
-                "/opt/aptos/var/": files,
-            }
         ),
     )
     validator_service_url = "%s://%s:%d" % (
@@ -82,8 +73,6 @@ def run(plan, args):
                     application_protocol=APTOS_FAUCET_API_PROTOCOL_NAME,
                     wait=WAIT_DISABLE,
                 ),
-            },
-            env_vars={
             },
             cmd=[
                 "/usr/local/bin/aptos-faucet",
