@@ -13,6 +13,9 @@ APTOS_FAUCET_API_PORT = 8000
 APTOS_TEST_DIR_PATH = "/opt/aptos/var"
 APTOS_MINT_KEY_PATH = "%s/mint.key" % APTOS_TEST_DIR_PATH
 
+APTOS_FAUCET_ACCOUNT='0xa550c18'
+APTOS_EXPECTED_SEQUENCE_COUNT=2
+
 WAIT_DISABLE = None
 
 def run(plan, args):
@@ -92,6 +95,25 @@ def run(plan, args):
         APTOS_FAUCET_API_PORT,
     )
     plan.print("Faucet running with url: %s" % faucet_service_url)
+
+    # Finally verify that the Faucet account has had transactions validated:
+    plan.print("Verifying that %d transactions are validated originating from the faucet account (%s)" % (APTOS_EXPECTED_SEQUENCE_COUNT, APTOS_FAUCET_ACCOUNT))
+    get_request_recipe = GetHttpRequestRecipe(
+        port_id = APTOS_VALIDATOR_PORT_NAME,
+        endpoint = "/v1/accounts/%s" % APTOS_FAUCET_ACCOUNT,
+        extract = {
+            "sequence_number" : ".sequence_number",
+        },
+    )
+    plan.wait(
+        service_name=APTOS_VALIDATOR_SERVICE_NAME,
+        recipe=get_request_recipe,
+        field="extract.sequence_number",
+        assertion="==",
+        target_value=str(APTOS_EXPECTED_SEQUENCE_COUNT),
+        timeout="30s",
+    )
+    plan.print("Verified that %d transactions were validated for the faucet account by the validator." % APTOS_EXPECTED_SEQUENCE_COUNT)
 
     return
 
