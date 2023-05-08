@@ -42,9 +42,6 @@ def run(plan, args):
             files={
                 "/opt/aptos/var/": files,
             }
-            # public_ports={
-            #     APTOS_VALIDATOR_PORT_NAME: PortSpec(number=APTOS_VALIDATOR_API_PORT),
-            # }
         ),
     )
 
@@ -98,9 +95,6 @@ def run(plan, args):
             files={
                 "/opt/aptos/var/": mint_key,
             }
-            # public_ports={
-            #     APTOS_FAUCET_PORT_NAME: PortSpec(number=APTOS_FAUCET_API_PORT),
-            # }
         ),
     )
 
