@@ -12,7 +12,7 @@ If you have [Kurtosis installed][install-kurtosis], run:
 kurtosis run github.com/kurtosis-tech/aptos-package/testnet-validator-example --enclave aptos
 ```
 
-If you don't have Kurtosis installed, [click here to run this package on the Kurtosis playground](https://gitpod.io/#KURTOSIS_PACKAGE_LOCATOR=/https://github.com/kurtosis-tech/aptos-package/testnet-validator-example).
+If you don't have Kurtosis installed, [click here to run this package on the Kurtosis playground](https://gitpod.io/#KURTOSIS_PACKAGE_LOCATOR=https%3A%2F%2Fgithub.com%2Fkurtosis-tech%2Faptos-package%2Ftestnet-validator-example).
 To blow away the created [enclave][enclaves-reference], run `kurtosis clean -a`.
 
 ### Interacting with the Validator
