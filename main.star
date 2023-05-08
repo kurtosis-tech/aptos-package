@@ -18,6 +18,7 @@ def run(plan, args):
         name="testnet_files"
     )
 
+    # Create the validator and mount the validator node template:
     validator_service = plan.add_service(
         name=APTOS_VALIDATOR_SERVICE_NAME,
         config=ServiceConfig(
@@ -44,32 +45,33 @@ def run(plan, args):
             }
         ),
     )
-
-    mintKeyAvailableRecipe = ExecRecipe(
-        command=["ls", "/opt/aptos/var/mint.key"],
-    )
-
-    plan.wait(
-        service_name=APTOS_VALIDATOR_SERVICE_NAME,
-        recipe=mintKeyAvailableRecipe,
-        field="code",
-        assertion="==",
-        target_value=0,
-        timeout="30s",
-    )
-
-    mint_key = plan.store_service_files(
-        service_name=APTOS_VALIDATOR_SERVICE_NAME,
-        src="/opt/aptos/var/mint.key",
-        name="mint.key",
-    )
-
     validator_service_url = "%s://%s:%d" % (
         APTOS_VALIDATOR_API_PROTOCOL_NAME,
         validator_service.ip_address,
         APTOS_VALIDATOR_API_PORT
     )
     plan.print("Validator running with url %s" % validator_service_url)
+
+    # Wait to proceed with execution until the validator has produced the mint key that the faucet needs:
+    plan.wait(
+        service_name=APTOS_VALIDATOR_SERVICE_NAME,
+        recipe=ExecRecipe(
+            command=["ls", "/opt/aptos/var/mint.key"],
+        ),
+        field="code",
+        assertion="==",
+        target_value=0,
+        timeout="30s",
+    )
+
+    # Create a files artifact of the mint.key (the faucet will mount later)
+    mint_key = plan.store_service_files(
+        service_name=APTOS_VALIDATOR_SERVICE_NAME,
+        src="/opt/aptos/var/mint.key",
+        name="mint.key",
+    )
+
+    # Start the faucet and mount the mint.key
     faucet_service = plan.add_service(
         name=APTOS_FAUCET_SERVICE_NAME,
         config=ServiceConfig(

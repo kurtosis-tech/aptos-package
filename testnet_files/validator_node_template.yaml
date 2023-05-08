@@ -4,13 +4,6 @@ consensus:
 validator_network:
   discovery_method: "onchain"
   listen_address: "/ip4/0.0.0.0/tcp/6180"
- # identity:
-#    type: "from_file"
-#    path: "/opt/aptos/var/mint.key"
-#  identity:
-#    type: "from_config"
-#    key: "b0f405a3e75516763c43a2ae1d70423699f34cd68fa9f8c6bb2d67aa87d0af69"
-#    peer_id: "00000000000000000000000000000000d58bc7bb154b38039bc9096ce04e1237"
   network_id: "validator"
   mutual_authentication: true
   max_frame_size: 4194304 # 4 MiB
