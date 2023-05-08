@@ -19,7 +19,6 @@ jobs:
       - checkout
 
       - run: |
-          # TODO parameterize this as necessary
           kurtosis run .
   
 workflows:

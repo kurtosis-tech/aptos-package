@@ -1,4 +1,4 @@
-My Package
+Aptos Testnet Validator
 ============
 This is an Aptos Testnet Validator [Kurtosis package](https://docs.kurtosis.com/concepts-reference/packages). 
 It creates a local testnet with 1 validator and a Faucet to generate coins. 
@@ -8,12 +8,11 @@ Run this package
 ----------------
 If you have [Kurtosis installed][install-kurtosis], run:
 
-<!-- TODO replace YOURUSER and THISREPO with the correct values -->
 ```bash
 kurtosis run github.com/kurtosis-tech/aptos-package/testnet-validator-example --enclave aptos
 ```
 
-If you don't have Kurtosis installed, [click here to run this package on the Kurtosis playground](https://gitpod.io/#KURTOSIS_PACKAGE_LOCATOR=/https://github.com/kurtosis-tech/playground-gitpod).
+If you don't have Kurtosis installed, [click here to run this package on the Kurtosis playground](https://gitpod.io/#KURTOSIS_PACKAGE_LOCATOR=/https://github.com/kurtosis-tech/aptos-package/testnet-validator-example).
 To blow away the created [enclave][enclaves-reference], run `kurtosis clean -a`.
 
 ### Interacting with the Validator
@@ -79,7 +78,6 @@ Use this package in your package
 --------------------------------
 Kurtosis packages can be composed inside other Kurtosis packages. To use this package in your package:
 
-<!-- TODO Replace YOURUSER and THISREPO with the correct values! -->
 First, import this package by adding the following to the top of your Starlark file:
 
 ```python
