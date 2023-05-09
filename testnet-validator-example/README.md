@@ -1,7 +1,7 @@
 Aptos Testnet Validator
 ============
 This is an Aptos Testnet Validator [Kurtosis package](https://docs.kurtosis.com/concepts-reference/packages). 
-It creates a local testnet with 1 validator and a Faucet to generate coins. 
+It creates a local testnet with 1 validator and a Faucet to generate tokens. 
 For more background on local testnets [reference Aptos' docs](https://aptos.dev/nodes/local-testnet/run-a-local-testnet). 
 
 Run this package
