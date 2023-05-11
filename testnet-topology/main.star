@@ -46,7 +46,7 @@ APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_LABEL = "aptos_validator_full_node_config
 APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/validator_full_node_config"
 APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
 
-# Public full node
+# Aptos Public full node
 APTOS_PUBLIC_FULL_NODE_IMAGE = APTOS_VALIDATOR_FULL_NODE_IMAGE
 APTOS_PUBLIC_FULL_NODE_SERVICE_NAME = "public_full_node"
 
@@ -69,23 +69,33 @@ APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
 
 WAIT_DISABLE = None
 
-NUM_VALIDATORS=2
-NUM_VALIDATORS_FULL_NODE=2
-NUM_PUBLIC_FULL_NODE=2
+# Number of nodes:
+DEFAULT_NUM_VALIDATORS=2
+DEFAULT_NUM_VALIDATORS_FULL_NODE=2
+DEFAULT_NUM_PUBLIC_FULL_NODE=2
+
+NUM_VALIDATORS_ARG_KEY="num_validators"
+NUM_VALIDATOR_FULL_NODES_ARG_KEY="num_validator_full_nodes"
+NUM_PUBLIC_FULL_NODES_ARG_KEY="num_public_full_nodes"
 
 def run(plan, args):
+    # Get topology configuration
+    num_validators = args.get(NUM_VALIDATORS_ARG_KEY, DEFAULT_NUM_VALIDATORS)
+    num_validator_full_nodes = args.get(NUM_VALIDATOR_FULL_NODES_ARG_KEY, DEFAULT_NUM_VALIDATORS_FULL_NODE)
+    num_public_full_nodes = args.get(NUM_PUBLIC_FULL_NODES_ARG_KEY, DEFAULT_NUM_PUBLIC_FULL_NODE)
+
+    # Upload genesis and node config files to enclave
     validator_genesis_files_artifact = upload_validator_genesis_files(plan)
     validator_config_files_artifact = upload_validator_config(plan)
     validator_full_node_config_files_artifact = upload_validator_full_node_config(plan)
     public_node_config_files_artifact = upload_public_full_node_config(plan)
 
-    for num in range(0, NUM_VALIDATORS):
+    # Create the nodes
+    for num in range(0, num_validators):
         create_validator_node(plan, num, validator_config_files_artifact, validator_genesis_files_artifact)
-
-    for num in range(0, NUM_VALIDATORS_FULL_NODE):
+    for num in range(0, num_validator_full_nodes):
         create_validator_full_node(plan, num, validator_full_node_config_files_artifact, validator_genesis_files_artifact)
-
-    for num in range(0, NUM_PUBLIC_FULL_NODE):
+    for num in range(0, num_public_full_nodes):
         create_public_full_node(plan, num, public_node_config_files_artifact, validator_genesis_files_artifact)
 
     return
