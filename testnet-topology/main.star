@@ -39,7 +39,7 @@ APTOS_VALIDATOR_FULL_NODE_PUBLIC_NETWORK_PORT = 6182
 
 APTOS_VALIDATOR_FULL_NODE_METRICS_PROTOCOL_NAME = "tcp"
 APTOS_VALIDATOR_FULL_NODE_METRICS_PORT_NAME = "vfnmp"
-APTOS_VALIDATOR_FULL_NODE_METRICS_PORT = 9101
+APTOS_VALIDATOR_FULL_NODE_METRICS_PORT = 9151
 
 APTOS_VALIDATOR_FULL_NODE_CONFIG_PATH = "/opt/aptos/etc/validator_full_node.yaml"
 APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_LABEL = "aptos_validator_full_node_config_files"
@@ -97,7 +97,7 @@ def run(plan, args):
     # Create the nodes
     plan.add_services(dict(validator_nodes + validator_nodes + full_nodes))
 
-    return
+    plan.exec(validator_nodes[0][0], ExecRecipe(command=["sleep", "15"]))
 
 def upload_validator_genesis_files(plan):
     return plan.upload_files(
