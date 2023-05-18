@@ -90,13 +90,12 @@ def run(plan, args):
     validator_full_node_config_files_artifact = upload_validator_full_node_config(plan)
     public_node_config_files_artifact = upload_public_full_node_config(plan)
 
+    validator_nodes = [get_validator_node(plan, num, validator_config_files_artifact, validator_genesis_files_artifact) for num in range(0, num_validators)]
+    validator_full_nodes = [get_validator_full_node(plan, num, validator_full_node_config_files_artifact, validator_genesis_files_artifact) for num in range(0, num_validator_full_nodes)]
+    full_nodes = [get_public_full_node(plan, num, public_node_config_files_artifact, validator_genesis_files_artifact) for num in range(0, num_public_full_nodes)]
+    
     # Create the nodes
-    for num in range(0, num_validators):
-        create_validator_node(plan, num, validator_config_files_artifact, validator_genesis_files_artifact)
-    for num in range(0, num_validator_full_nodes):
-        create_validator_full_node(plan, num, validator_full_node_config_files_artifact, validator_genesis_files_artifact)
-    for num in range(0, num_public_full_nodes):
-        create_public_full_node(plan, num, public_node_config_files_artifact, validator_genesis_files_artifact)
+    plan.add_services(dict(validator_nodes + validator_nodes + full_nodes))
 
     return
 
@@ -124,10 +123,8 @@ def upload_public_full_node_config(plan):
         name=APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_LABEL,
     )
 
-def create_validator_node(plan, node_number, validator_config_files_artifact, validator_genesis_files_artifact):
-    service = plan.add_service(
-        name="%s_%s" % (APTOS_VALIDATOR_SERVICE_NAME, node_number),
-        config=ServiceConfig(
+def get_validator_node(plan, node_number, validator_config_files_artifact, validator_genesis_files_artifact):
+    return ("%s_%s" % (APTOS_VALIDATOR_SERVICE_NAME, node_number), ServiceConfig(
             image=APTOS_VALIDATOR_IMAGE,
             ports={
                 APTOS_VALIDATOR_API_PORT_NAME: PortSpec(
@@ -157,13 +154,10 @@ def create_validator_node(plan, node_number, validator_config_files_artifact, va
             ],
         ),
     )
-    return service
 
 
-def create_validator_full_node(plan, node_number, validator_config_files_artifact, validator_genesis_files_artifact):
-    service = plan.add_service(
-        name="%s_%s" % (APTOS_VALIDATOR_FULL_NODE_SERVICE_NAME, node_number),
-        config=ServiceConfig(
+def get_validator_full_node(plan, node_number, validator_config_files_artifact, validator_genesis_files_artifact):
+    return ("%s_%s" % (APTOS_VALIDATOR_FULL_NODE_SERVICE_NAME, node_number), ServiceConfig(
             image=APTOS_VALIDATOR_FULL_NODE_IMAGE,
             ports={
                 APTOS_VALIDATOR_FULL_NODE_PORT_NAME: PortSpec(
@@ -193,13 +187,10 @@ def create_validator_full_node(plan, node_number, validator_config_files_artifac
             ],
         ),
     )
-    return service
 
 
-def create_public_full_node(plan, node_number, validator_config_files_artifact, validator_genesis_files_artifact):
-    service = plan.add_service(
-        name="%s_%s" % (APTOS_PUBLIC_FULL_NODE_SERVICE_NAME, node_number),
-        config=ServiceConfig(
+def get_public_full_node(plan, node_number, validator_config_files_artifact, validator_genesis_files_artifact):
+    return ("%s_%s" % (APTOS_PUBLIC_FULL_NODE_SERVICE_NAME, node_number), ServiceConfig(
             image=APTOS_PUBLIC_FULL_NODE_IMAGE,
             ports={
                 APTOS_PUBLIC_FULL_NODE_PORT_NAME: PortSpec(
@@ -229,4 +220,3 @@ def create_public_full_node(plan, node_number, validator_config_files_artifact, 
             ],
         ),
     )
-    return service
