@@ -1,5 +1,5 @@
 {
-  "num_validators": 100,
-  "num_validator_full_nodes": 50,
-  "num_public_full_nodes": 50
+  "num_validators": 20,
+  "num_validator_full_nodes": 20,
+  "num_public_full_nodes": 20
 }
