@@ -95,7 +95,7 @@ def run(plan, args):
     full_nodes = [get_public_full_node(plan, num, public_node_config_files_artifact, validator_genesis_files_artifact) for num in range(0, num_public_full_nodes)]
     
     # Create the nodes
-    plan.add_services(dict(validator_nodes + validator_nodes + full_nodes))
+    plan.add_services(dict(validator_nodes + validator_full_nodes + full_nodes))
 
 def upload_validator_genesis_files(plan):
     return plan.upload_files(
