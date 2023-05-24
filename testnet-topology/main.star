@@ -77,10 +77,16 @@ NUM_VALIDATORS_ARG_KEY = "num_validators"
 NUM_VALIDATOR_FULL_NODES_ARG_KEY = "num_validator_full_nodes"
 NUM_PUBLIC_FULL_NODES_ARG_KEY = "num_public_full_nodes"
 
+LAYOUT_YML = """
+root_key: "0xca3579457555c80fc7bb39964eb298c414fd60f81a2f8eedb0244ec07a26e575"
+users:
+  - organizer
+chain_id: 123
+"""
 
 def run(plan, args):
 
-    create_and_upload_genesis_files(plan, validator_config_files_artifact, validator_genesis_files_artifact)
+    create_and_upload_genesis_files(plan)
 
     # For testing stop now:
     return
@@ -106,42 +112,30 @@ def run(plan, args):
 
 
 def create_and_upload_genesis_files(plan) :
-    service_name="genesis_service"
+    service_name="genesis_organizer"
 
     # Run ubuntu amd64 as Aptos CLI does not support arm
     service = plan.add_service(
         name=service_name,
         config=ServiceConfig(
-            image="amd64/ubuntu:20.04",
+            image="amd64/rust:1.66.1-buster",
             entrypoint = ["sleep", "9999999"],
+            env_vars = {
+                "WORKSPACE": "/root/workspace",
+            },
+            ports={
+                APTOS_VALIDATOR_NETWORK_PORT_NAME: PortSpec(
+                    number=APTOS_VALIDATOR_NETWORK_PORT,
+                    application_protocol=APTOS_VALIDATOR_NETWORK_PROTOCOL_NAME,
+                    wait=WAIT_DISABLE,
+                ),
+                APTOS_VALIDATOR_NETWORK_FULLNODE_PORT_NAME: PortSpec(
+                    number=APTOS_VALIDATOR_NETWORK_FULLNODE_PORT,
+                    application_protocol=APTOS_VALIDATOR_NETWORK_FULLNODE_PROTOCOL_NAME,
+                    wait=WAIT_DISABLE,
+                ),
+            }
         ),
-    )
-
-    # install curl and python3
-    plan.wait(
-        service_name=service_name,
-        recipe=ExecRecipe(command=[
-            "bash",
-            "-c",
-            "apt update"
-        ]),
-        field="code",
-        assertion="==",
-        target_value=0,
-        timeout="60s",
-    )
-
-    plan.wait(
-        service_name=service_name,
-        recipe=ExecRecipe(command=[
-            "bash",
-            "-c",
-            "apt install -y curl python3"
-        ]),
-        field="code",
-        assertion="==",
-        target_value=0,
-        timeout="60s",
     )
 
     plan.wait(
@@ -157,12 +151,70 @@ def create_and_upload_genesis_files(plan) :
         timeout="30s",
     )
 
+    # Generate layout.yml
     plan.wait(
         service_name=service_name,
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
-            "/root/.local/bin/aptos genesis generate-genesis --local-repository-dir ~/testnet --output-dir ~/testnet",
+            "mkdir -p $WORKSPACE/genesis && echo \"%s\" > $WORKSPACE/genesis/layout.yml" % (LAYOUT_YML),
+        ]),
+        field="code",
+        assertion="==",
+        target_value=0,
+        timeout="5m",
+    )
+    # Generate framework.mrb
+    plan.wait(
+        service_name=service_name,
+        recipe=ExecRecipe(command=[
+            "bash",
+            "-c",
+            "cd /root/aptos-core/ && cargo run --package aptos-framework release && mv head.mrb $WORKSPACE/genesis/framework.mrb",
+        ]),
+        field="code",
+        assertion="==",
+        target_value=0,
+        timeout="5m",
+    )
+
+    plan.wait(
+        service_name=service_name,
+        recipe=ExecRecipe(command=[
+            "bash",
+            "-c",
+            "/root/.local/bin/aptos genesis generate-keys --output-dir $WORKSPACE/keys",
+        ]),
+        field="code",
+        assertion="==",
+        target_value=0,
+        timeout="5m",
+    )
+
+    plan.wait(
+        service_name=service_name,
+        recipe=ExecRecipe(command=[
+            "bash",
+            "-c",
+            """/root/.local/bin/aptos genesis set-validator-configuration
+            --keys-dir $WORKSPACE/keys
+            --username organizer
+            --validator-host %s
+            --full-node-host %s
+            --local-repository-dir $WORKSPACE/genesis""" % (service.ip_address + ":" + str(service.ports[APTOS_VALIDATOR_NETWORK_PORT_NAME].number), service.ip_address + ":" + str(service.ports[APTOS_VALIDATOR_NETWORK_FULLNODE_PORT_NAME].number)),
+        ]),
+        field="code",
+        assertion="==",
+        target_value=0,
+        timeout="5m",
+    )
+
+    plan.wait(
+        service_name=service_name,
+        recipe=ExecRecipe(command=[
+            "bash",
+            "-c",
+            "/root/.local/bin/aptos genesis generate-genesis --local-repository-dir $WORKSPACE/genesis --output-dir $WORKSPACE/genesis-output/",
         ]),
         field="code",
         assertion="==",
