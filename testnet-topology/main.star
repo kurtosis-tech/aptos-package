@@ -3,6 +3,10 @@ APTOS_GENESIS_FILES_LABEL = "aptos_genesis_files"
 APTOS_GENESIS_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/genesis_files"
 APTOS_GENESIS_FILES_TARGET_PATH = "/opt/aptos/genesis"
 
+APTOS_GENESIS_ORGANIZER_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/organizer_files"
+APTOS_GENESIS_ORGANIZER_FILES_LABEL = "aptos_genesis_organizer_files"
+APTOS_GENESIS_ORGANIZER_FILES_TARGET_PATH = "/opt/aptos/organizer"
+
 # Aptos Validator
 APTOS_VALIDATOR_IMAGE = "aptoslabs/validator:testnet"
 APTOS_VALIDATOR_SERVICE_NAME = "validator"
@@ -77,11 +81,27 @@ NUM_VALIDATORS_ARG_KEY = "num_validators"
 NUM_VALIDATOR_FULL_NODES_ARG_KEY = "num_validator_full_nodes"
 NUM_PUBLIC_FULL_NODES_ARG_KEY = "num_public_full_nodes"
 
-LAYOUT_YML = """
+LAYOUT_YAML = """
+---
 root_key: "0xca3579457555c80fc7bb39964eb298c414fd60f81a2f8eedb0244ec07a26e575"
 users:
-  - organizer
+    - organizer
 chain_id: 123
+allow_new_validators: true
+epoch_duration_secs: 7200
+is_test: true
+min_stake: 100000000000000
+min_voting_threshold: 100000000000000
+max_stake: 100000000000000000
+recurring_lockup_duration_secs: 86400
+required_proposer_stake: 100000000000000
+rewards_apy_percentage: 10
+voting_duration_secs: 43200
+voting_power_increase_limit: 20
+total_supply: ~
+employee_vesting_start: 1663456089
+employee_vesting_period_duration: 300
+
 """
 
 def run(plan, args):
@@ -114,11 +134,16 @@ def run(plan, args):
 def create_and_upload_genesis_files(plan) :
     service_name="genesis_organizer"
 
+    plan.upload_files(
+        src=APTOS_GENESIS_ORGANIZER_FILES_SOURCE_PATH,
+        name=APTOS_GENESIS_ORGANIZER_FILES_LABEL,
+    )
+
     # Run ubuntu amd64 as Aptos CLI does not support arm
     service = plan.add_service(
         name=service_name,
         config=ServiceConfig(
-            image="amd64/rust:1.66.1-buster",
+            image="amd64/ubuntu:mantic",
             entrypoint = ["sleep", "9999999"],
             env_vars = {
                 "WORKSPACE": "/root/workspace",
@@ -134,8 +159,24 @@ def create_and_upload_genesis_files(plan) :
                     application_protocol=APTOS_VALIDATOR_NETWORK_FULLNODE_PROTOCOL_NAME,
                     wait=WAIT_DISABLE,
                 ),
+            },
+            files={
+                APTOS_GENESIS_ORGANIZER_FILES_TARGET_PATH: APTOS_GENESIS_ORGANIZER_FILES_LABEL,
             }
         ),
+    )
+
+    plan.wait(
+        service_name=service_name,
+        recipe=ExecRecipe(command=[
+            "bash",
+            "-c",
+            "apt-get update && apt install -y curl libc6 python3 vim"
+        ]),
+        field="code",
+        assertion="==",
+        target_value=0,
+        timeout="5m",
     )
 
     plan.wait(
@@ -151,13 +192,13 @@ def create_and_upload_genesis_files(plan) :
         timeout="30s",
     )
 
-    # Generate layout.yml
+    # Generate layout.yaml
     plan.wait(
         service_name=service_name,
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
-            "mkdir -p $WORKSPACE/genesis && echo \"%s\" > $WORKSPACE/genesis/layout.yml" % (LAYOUT_YML),
+            "mkdir -p $WORKSPACE/genesis && echo \"%s\" > $WORKSPACE/genesis/layout.yml" % (LAYOUT_YAML),
         ]),
         field="code",
         assertion="==",
@@ -170,7 +211,7 @@ def create_and_upload_genesis_files(plan) :
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
-            "cd /root/aptos-core/ && cargo run --package aptos-framework release && mv head.mrb $WORKSPACE/genesis/framework.mrb",
+            "mv %s/framework.mrb $WORKSPACE/genesis/framework.mrb" % APTOS_GENESIS_ORGANIZER_FILES_TARGET_PATH
         ]),
         field="code",
         assertion="==",
@@ -196,12 +237,7 @@ def create_and_upload_genesis_files(plan) :
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
-            """/root/.local/bin/aptos genesis set-validator-configuration
-            --keys-dir $WORKSPACE/keys
-            --username organizer
-            --validator-host %s
-            --full-node-host %s
-            --local-repository-dir $WORKSPACE/genesis""" % (service.ip_address + ":" + str(service.ports[APTOS_VALIDATOR_NETWORK_PORT_NAME].number), service.ip_address + ":" + str(service.ports[APTOS_VALIDATOR_NETWORK_FULLNODE_PORT_NAME].number)),
+            "cd $WORKSPACE/keys && /root/.local/bin/aptos genesis set-validator-configuration --username organizer --validator-host %s --full-node-host %s --local-repository-dir $WORKSPACE/genesis" % (service.ip_address + ":" + str(service.ports[APTOS_VALIDATOR_NETWORK_PORT_NAME].number), service.ip_address + ":" + str(service.ports[APTOS_VALIDATOR_NETWORK_FULLNODE_PORT_NAME].number)),
         ]),
         field="code",
         assertion="==",
@@ -226,34 +262,34 @@ def create_and_upload_genesis_files(plan) :
     # wget https://github.com/aptos-labs/aptos-core/releases/download/aptos-framework-v0.3.0/framework.mrb framework.mrb
 
 
-# Wait to proceed with execution until the validator has produced the mint key that the faucet needs:
-    plan.wait(
-        service_name=service_name,
-        recipe=ExecRecipe(command=["ls", "~/workspace/genesis.blob"]),
-        field="code",
-        assertion="==",
-        target_value=0,
-        timeout="30s",
-    )
-    plan.wait(
-        service_name=service_name,
-        recipe=ExecRecipe(command=["ls", "~/workspace/waypoint.txt"]),
-        field="code",
-        assertion="==",
-        target_value=0,
-        timeout="30s",
-    )
+# # Wait to proceed with execution until the validator has produced the mint key that the faucet needs:
+#     plan.wait(
+#         service_name=service_name,
+#         recipe=ExecRecipe(command=["ls", "~/workspace/genesis.blob"]),
+#         field="code",
+#         assertion="==",
+#         target_value=0,
+#         timeout="30s",
+#     )
+#     plan.wait(
+#         service_name=service_name,
+#         recipe=ExecRecipe(command=["ls", "~/workspace/waypoint.txt"]),
+#         field="code",
+#         assertion="==",
+#         target_value=0,
+#         timeout="30s",
+#     )
 
-    # Create a files artifact of the mint.key (the faucet will mount later)
-    genesis_files = plan.store_service_files(
-        service_name=service_name,
-        src="~/workspace",
-        name="genesis_files",
-    )
+#     # Create a files artifact of the mint.key (the faucet will mount later)
+#     genesis_files = plan.store_service_files(
+#         service_name=service_name,
+#         src="~/workspace",
+#         name="genesis_files",
+#     )
 
-    plan.remove_service(service_name)
+#     plan.remove_service(service_name)
 
-    return genesis_files
+#     return genesis_files
 
 
 def upload_validator_genesis_files(plan):
