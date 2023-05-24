@@ -90,8 +90,8 @@ chain_id: 123
 allow_new_validators: true
 epoch_duration_secs: 7200
 is_test: true
-min_stake: 100000000000000
-min_voting_threshold: 100000000000000
+min_stake: 1
+min_voting_threshold: 1
 max_stake: 100000000000000000
 recurring_lockup_duration_secs: 86400
 required_proposer_stake: 100000000000000
@@ -198,7 +198,7 @@ def create_and_upload_genesis_files(plan) :
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
-            "mkdir -p $WORKSPACE/genesis && echo \"%s\" > $WORKSPACE/genesis/layout.yml" % (LAYOUT_YAML),
+            "mkdir -p $WORKSPACE/genesis && echo \"%s\" > $WORKSPACE/genesis/layout.yaml" % (LAYOUT_YAML),
         ]),
         field="code",
         assertion="==",
@@ -250,7 +250,7 @@ def create_and_upload_genesis_files(plan) :
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
-            "/root/.local/bin/aptos genesis generate-genesis --local-repository-dir $WORKSPACE/genesis --output-dir $WORKSPACE/genesis-output/",
+            "mkdir -p $WORKSPACE/genesis-output/ && /root/.local/bin/aptos genesis generate-genesis --local-repository-dir $WORKSPACE/genesis --output-dir $WORKSPACE/genesis-output/",
         ]),
         field="code",
         assertion="==",
