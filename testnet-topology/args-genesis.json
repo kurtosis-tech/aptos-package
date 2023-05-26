@@ -1,0 +1,6 @@
+{
+  "generate_genesis": true,
+  "num_validators": 2,
+  "num_validator_full_nodes": 2,
+  "num_public_full_nodes": 2
+}
