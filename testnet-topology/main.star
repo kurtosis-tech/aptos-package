@@ -76,7 +76,9 @@ WAIT_DISABLE = None
 DEFAULT_NUM_VALIDATORS = 2
 DEFAULT_NUM_VALIDATORS_FULL_NODE = 2
 DEFAULT_NUM_PUBLIC_FULL_NODE = 2
+DEFAULT_GENERATE_GENESIS_MODE = False
 
+GENERATE_GENESIS_ARG_KEY = "generate_genesis"
 NUM_VALIDATORS_ARG_KEY = "num_validators"
 NUM_VALIDATOR_FULL_NODES_ARG_KEY = "num_validator_full_nodes"
 NUM_PUBLIC_FULL_NODES_ARG_KEY = "num_public_full_nodes"
@@ -106,11 +108,9 @@ employee_vesting_period_duration: 300
 
 def run(plan, args):
 
-    create_and_upload_genesis_files(plan)
-
-    # For testing stop now:
-    return
-
+    generate_genesis = args.get(GENERATE_GENESIS_ARG_KEY, DEFAULT_GENERATE_GENESIS_MODE)
+    if generate_genesis:
+        create_and_upload_genesis_files(plan)
 
     # Get topology configuration
     num_validators = args.get(NUM_VALIDATORS_ARG_KEY, DEFAULT_NUM_VALIDATORS)
