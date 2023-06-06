@@ -2,7 +2,7 @@ base:
   role: "validator"
   data_dir: "/opt/aptos/data"
   waypoint:
-    from_file: "/opt/aptos/genesis/waypoint.txt"
+    from_file: "/opt/aptos/genesis/genesis/waypoint.txt"
 
 consensus:
   safety_rules:
@@ -16,17 +16,17 @@ consensus:
       from_file:
         waypoint:
           from_file: /opt/aptos/genesis/waypoint.txt
-        identity_blob_path: /opt/aptos/genesis/validator-identity.yaml
+        identity_blob_path: /opt/aptos/keys/validator-identity.yaml
 
 execution:
-  genesis_file_location: "/opt/aptos/genesis/genesis.blob"
+  genesis_file_location: "/opt/aptos/genesis/genesis/genesis.blob"
 
 validator_network:
   discovery_method: "onchain"
   mutual_authentication: true
   identity:
     type: "from_file"
-    path: "/opt/aptos/genesis/validator-identity.yaml"
+    path: "/opt/aptos/keys/keys/validator-identity.yaml"
 
 api:
   enabled: true

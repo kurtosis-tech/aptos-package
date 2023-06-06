@@ -2,10 +2,10 @@ base:
   role: "full_node"
   data_dir: "/opt/aptos/data"
   waypoint:
-    from_file: "/opt/aptos/genesis/waypoint.txt"
+    from_file: "/opt/aptos/genesis/genesis/waypoint.txt"
 
 execution:
-  genesis_file_location: "/opt/aptos/genesis/genesis.blob"
+  genesis_file_location: "/opt/aptos/genesis/genesis/genesis.blob"
 
 full_node_networks:
 - network_id:
@@ -13,7 +13,7 @@ full_node_networks:
   listen_address: "/ip4/0.0.0.0/tcp/6181"
   identity:
     type: "from_file"
-    path: "/opt/aptos/genesis/validator-full-node-identity.yaml"
+    path: "/opt/aptos/keys/keys/validator-full-node-identity.yaml"
 
 mempool:
   shared_mempool_max_concurrent_inbound_syncs: 16 # default 4
