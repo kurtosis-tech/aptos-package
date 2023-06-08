@@ -1,10 +1,14 @@
+#load ("yaml.star", "yaml")
 # Shared
+
 #APTOS_GENESIS_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/genesis_files"
 APTOS_GENESIS_FILES_LABEL = "aptos_genesis_files"
 APTOS_GENESIS_FILES_TARGET_PATH = "/opt/aptos/genesis"
-APTOS_WORKSPACE_USERNAME = "kurtosis"
+APTOS_USERNAME_PREFIX = "aptos-node"
+APTOS_NODE_CONFIG_PREFIX="node_config"
 
-APTOS_IDENTITY_FILES_TARGET_PATH = "/opt/aptos/keys"
+APTOS_FILES_TARGET_PATH = "/opt/aptos/"
+APTOS_IDENTITY_FILES_TARGET_PATH = "/opt/aptos/workspace/"
 
 APTOS_GENESIS_ORGANIZER_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/organizer_files"
 APTOS_GENESIS_ORGANIZER_FILES_LABEL = "aptos_genesis_organizer_files"
@@ -49,7 +53,6 @@ APTOS_VALIDATOR_FULL_NODE_API_PORT = 8080
 APTOS_VALIDATOR_FULL_NODE_PRIVATE_NETWORK_PROTOCOL_NAME = "tcp"
 APTOS_VALIDATOR_FULL_NODE_PRIVATE_NETWORK_PORT_NAME = "v-full-net-private"
 APTOS_VALIDATOR_FULL_NODE_PRIVATE_NETWORK_PORT = 6181
-
 
 APTOS_VALIDATOR_FULL_NODE_PUBLIC_NETWORK_PROTOCOL_NAME = "tcp"
 APTOS_VALIDATOR_FULL_NODE_PUBLIC_NETWORK_PORT_NAME = "v-full-net-pub"
@@ -97,11 +100,76 @@ NUM_VALIDATORS_ARG_KEY = "num_validators"
 NUM_VALIDATOR_FULL_NODES_ARG_KEY = "num_validator_full_nodes"
 NUM_PUBLIC_FULL_NODES_ARG_KEY = "num_public_full_nodes"
 
-LAYOUT_YAML = """
+def run(plan, args):
+
+    # # Get topology configuration
+    num_validators = args.get(NUM_VALIDATORS_ARG_KEY, DEFAULT_NUM_VALIDATORS)
+    num_validator_full_nodes = args.get(NUM_VALIDATOR_FULL_NODES_ARG_KEY, DEFAULT_NUM_VALIDATORS_FULL_NODE)
+    num_public_full_nodes = args.get(NUM_PUBLIC_FULL_NODES_ARG_KEY, DEFAULT_NUM_PUBLIC_FULL_NODE)
+
+    user_names = generate_user_names(num_validators)
+
+    nodes_configs = create_and_upload_genesis_files(plan, user_names)
+    validator_config_files_artifact = upload_validator_config(plan)
+
+
+    for i in range(0, len(nodes_configs)):
+        user_name = user_names[i]
+        node_config = nodes_configs[i]
+        service_name, service_config = get_validator_node(user_name, validator_config_files_artifact, node_config)
+        plan.add_service(service_name, service_config)
+
+
+    #plan.add_services(dict(services))  # + validator_full_nodes + full_nodes))
+
+    plan.print(nodes_configs)
+
+    # nodes_config_0, nodes_config_1 = create_and_upload_genesis_files(plan, user_names)
+    #
+    # validator_config_files_artifact = upload_validator_config(plan)
+    # # validator_full_node_config_files_artifact = upload_validator_full_node_config(plan)
+    # # public_node_config_files_artifact = upload_public_full_node_config(plan)
+    #
+    # service_name_0, service_config_0 = get_validator_node("aptos-node-0", validator_config_files_artifact, nodes_config_0)
+    # plan.add_service(service_name_0, service_config_0)
+    # service_name_1, service_config_1 = get_validator_node("aptos-node-1", validator_config_files_artifact, nodes_config_1)
+    # plan.add_service(service_name_1, service_config_1)
+
+    # plan.print(nodes_configs)
+#     services = {}
+#     for user_name in user_names:
+#         service_name, service_config = get_validator_node(user_name, validator_config_files_artifact, nodes_config_0)
+#         plan.add_service(service_name, service_config)
+#         plan.print(node_config)
+# #        services[service_name].append(service_config)
+    #
+    #
+    # # #
+    # # validator_nodes = [get_validator_node(num, validator_config_files_artifact, validator_genesis_files_artifact, ) for num in
+    # #                    range(0, num_validators)]
+    # # validator_full_nodes = [
+    # #     get_validator_full_node(num, validator_full_node_config_files_artifact, validator_genesis_files_artifact,
+    # #                             validator_keys_files_artifact) for num in range(0, num_validator_full_nodes)]
+    # # full_nodes = [get_public_full_node(num, public_node_config_files_artifact, validator_genesis_files_artifact,
+    # #                                    validator_keys_files_artifact) for num in range(0, num_public_full_nodes)]
+    # #
+    #print(services)
+    #plan.print(services)
+    # Create the nodes
+    #plan.add_services(dict(services))  # + validator_full_nodes + full_nodes))
+
+
+def generate_user_names(num_validators):
+    return [APTOS_USERNAME_PREFIX + '-{}'.format(x) for x in range(0, num_validators)]
+
+
+def create_and_upload_genesis_files(plan, user_names):
+    serialized_usernames = ', '.join(user_names)
+
+    layout_yaml = """
 ---
 root_key: "0xca3579457555c80fc7bb39964eb298c414fd60f81a2f8eedb0244ec07a26e575"
-users:
-    - %s
+users: [%s]
 chain_id: 30
 allow_new_validators: true
 epoch_duration_secs: 7200
@@ -118,39 +186,9 @@ total_supply: ~
 employee_vesting_start: 1663456089
 employee_vesting_period_duration: 300
 
-""" % APTOS_WORKSPACE_USERNAME
+"""  % serialized_usernames
 
-
-def run(plan, args):
-    # generate_genesis = args.get(GENERATE_GENESIS_ARG_KEY, DEFAULT_GENERATE_GENESIS_MODE)
-    # if generate_genesis:
-    genesis_files, key_files = create_and_upload_genesis_files(plan)
-
-    # # Get topology configuration
-    num_validators = args.get(NUM_VALIDATORS_ARG_KEY, DEFAULT_NUM_VALIDATORS)
-    num_validator_full_nodes = args.get(NUM_VALIDATOR_FULL_NODES_ARG_KEY, DEFAULT_NUM_VALIDATORS_FULL_NODE)
-    num_public_full_nodes = args.get(NUM_PUBLIC_FULL_NODES_ARG_KEY, DEFAULT_NUM_PUBLIC_FULL_NODE)
-    #
-    # # Upload genesis and node config files to enclave
-    validator_genesis_files_artifact = genesis_files
-    validator_keys_files_artifact = key_files
-    validator_config_files_artifact = upload_validator_config(plan)
-    validator_full_node_config_files_artifact = upload_validator_full_node_config(plan)
-    public_node_config_files_artifact = upload_public_full_node_config(plan)
-
-    validator_nodes = [get_validator_node(num, validator_config_files_artifact, validator_genesis_files_artifact,
-                                          validator_keys_files_artifact) for num in range(0, num_validators)]
-    validator_full_nodes = [
-        get_validator_full_node(num, validator_full_node_config_files_artifact, validator_genesis_files_artifact,
-                                validator_keys_files_artifact) for num in range(0, num_validator_full_nodes)]
-    full_nodes = [get_public_full_node(num, public_node_config_files_artifact, validator_genesis_files_artifact,
-                                       validator_keys_files_artifact) for num in range(0, num_public_full_nodes)]
-
-    # Create the nodes
-    plan.add_services(dict(validator_nodes + validator_full_nodes + full_nodes))
-
-
-def create_and_upload_genesis_files(plan):
+    plan.print(layout_yaml)
     service_name = "genesis_organizer"
 
     plan.upload_files(
@@ -159,25 +197,12 @@ def create_and_upload_genesis_files(plan):
     )
 
     # Run ubuntu amd64 as Aptos CLI does not support arm
-    service = plan.add_service(
+    plan.add_service(
         name=service_name,
         config=ServiceConfig(
             image="kurtosistech/aptos-package-organizer:latest",
             env_vars={
                 "WORKSPACE": APTOS_WORKSPACE,
-                "USERNAME": APTOS_WORKSPACE_USERNAME,
-            },
-            ports={
-                APTOS_VALIDATOR_NETWORK_PORT_NAME: PortSpec(
-                    number=APTOS_VALIDATOR_NETWORK_PORT,
-                    application_protocol=APTOS_VALIDATOR_NETWORK_PROTOCOL_NAME,
-                    wait=WAIT_DISABLE,
-                ),
-                APTOS_PUBLIC_FULL_NODE_PUBLIC_NETWORK_PORT_NAME: PortSpec(
-                    number=APTOS_PUBLIC_FULL_NODE_PUBLIC_NETWORK_PORT,
-                    application_protocol=APTOS_PUBLIC_FULL_NODE_PUBLIC_NETWORK_PROTOCOL_NAME,
-                    wait=WAIT_DISABLE,
-                ),
             },
             files={
                 APTOS_GENESIS_ORGANIZER_FILES_TARGET_PATH: APTOS_GENESIS_ORGANIZER_FILES_LABEL,
@@ -204,13 +229,14 @@ def create_and_upload_genesis_files(plan):
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
-            "mkdir -p $WORKSPACE/configuration && echo \"%s\" > $WORKSPACE/configuration/layout.yaml" % LAYOUT_YAML,
+            "mkdir -p $WORKSPACE/configuration && echo \"%s\" > $WORKSPACE/configuration/layout.yaml" % layout_yaml,
         ]),
         field="code",
         assertion="==",
         target_value=0,
         timeout="5m",
     )
+
     # Generate framework.mrb
     plan.wait(
         service_name=service_name,
@@ -225,37 +251,45 @@ def create_and_upload_genesis_files(plan):
         timeout="5m",
     )
 
-    plan.wait(
-        service_name=service_name,
-        recipe=ExecRecipe(command=[
-            "bash",
-            "-c",
-            "/root/.local/bin/aptos genesis generate-keys --output-dir $WORKSPACE/keys",
-        ]),
-        field="code",
-        assertion="==",
-        target_value=0,
-        timeout="5m",
-    )
+    for user_name in user_names:
+        user_dir = "%s/%s" % (APTOS_WORKSPACE, user_name)
+        validator_host = "%s:%d" % (user_name, APTOS_VALIDATOR_NETWORK_PORT)
+        public_full_node_host = "%s:%d" % (user_name, APTOS_PUBLIC_FULL_NODE_PUBLIC_NETWORK_PORT)
 
-    # TODO: Do we need to add the public keys?
-    command = "cd $WORKSPACE/keys && /root/.local/bin/aptos genesis set-validator-configuration --username $USERNAME --validator-host %s --full-node-host %s --local-repository-dir $WORKSPACE/configuration" % (
-        service.ip_address + ":" + str(service.ports[APTOS_VALIDATOR_NETWORK_PORT_NAME].number),
-        service.ip_address + ":" + str(service.ports[APTOS_PUBLIC_FULL_NODE_PUBLIC_NETWORK_PORT_NAME].number)
-    )
-    plan.print("Executing command: %s" % command)
-    plan.wait(
-        service_name=service_name,
-        recipe=ExecRecipe(command=[
-            "bash",
-            "-c",
-            command,
-        ]),
-        field="code",
-        assertion="==",
-        target_value=0,
-        timeout="5m",
-    )
+        plan.wait(
+            service_name=service_name,
+            recipe=ExecRecipe(command=[
+                "bash",
+                "-c",
+                "/root/.local/bin/aptos genesis generate-keys --output-dir %s" % user_dir,
+            ]),
+            field="code",
+            assertion="==",
+            target_value=0,
+            timeout="5m",
+        )
+
+        command = "cd %s && /root/.local/bin/aptos genesis set-validator-configuration --owner-public-identity-file %s/public-keys.yaml --username %s --validator-host %s --full-node-host %s --local-repository-dir $WORKSPACE/configuration" % (
+            user_dir,
+            user_dir,
+            user_name,
+            validator_host,
+            public_full_node_host,
+        )
+
+        #plan.print("Executing command: %s" % command)
+        plan.wait(
+            service_name=service_name,
+            recipe=ExecRecipe(command=[
+                "bash",
+                "-c",
+                command,
+            ]),
+            field="code",
+            assertion="==",
+            target_value=0,
+            timeout="5m",
+        )
 
     plan.wait(
         service_name=service_name,
@@ -270,7 +304,7 @@ def create_and_upload_genesis_files(plan):
         timeout="60s",
     )
 
-    # # Wait to proceed with execution until the file is ready
+    # Verify that genesis.blob and waypoint.txt exists before uploading to the enclave
     plan.wait(
         service_name=service_name,
         recipe=ExecRecipe(command=[
@@ -296,47 +330,71 @@ def create_and_upload_genesis_files(plan):
         timeout="60s",
     )
 
-    plan.wait(
-        service_name=service_name,
-        recipe=ExecRecipe(command=[
-            "bash",
-            "-c",
-            "ls %s/keys/validator-identity.yaml" % APTOS_WORKSPACE]
-        ),
-        field="code",
-        assertion="==",
-        target_value=0,
-        timeout="60s",
-    )
-    plan.wait(
-        service_name=service_name,
-        recipe=ExecRecipe(command=[
-            "bash",
-            "-c",
-            "ls %s/keys/validator-full-node-identity.yaml" % APTOS_WORKSPACE]
-        ),
-        field="code",
-        assertion="==",
-        target_value=0,
-        timeout="60s",
-    )
+    # plan.wait(
+    #     service_name=service_name,
+    #     recipe=ExecRecipe(command=[
+    #         "bash",
+    #         "-c",
+    #         "ls %s/keys/validator-identity.yaml" % APTOS_WORKSPACE]
+    #     ),
+    #     field="code",
+    #     assertion="==",
+    #     target_value=0,
+    #     timeout="60s",
+    # )
+    # plan.wait(
+    #     service_name=service_name,
+    #     recipe=ExecRecipe(command=[
+    #         "bash",
+    #         "-c",
+    #         "ls %s/keys/validator-full-node-identity.yaml" % APTOS_WORKSPACE]
+    #     ),
+    #     field="code",
+    #     assertion="==",
+    #     target_value=0,
+    #     timeout="60s",
+    # )
 
-    genesis_files = plan.store_service_files(
-        service_name=service_name,
-        src="%s/genesis" % APTOS_WORKSPACE,
-        name="genesis_files",
-    )
+    # genesis_files = plan.store_service_files(
+    #     service_name=service_name,
+    #     src="%s/genesis" % APTOS_WORKSPACE,
+    #     name="genesis_files",
+    # )
 
-    keys_files = plan.store_service_files(
-        service_name=service_name,
-        src="%s/keys" % APTOS_WORKSPACE,
-        name="keys_files",
-    )
+    nodes_configs = []
+    for user_name in user_names:
+        node_config = plan.store_service_files(
+            service_name=service_name,
+            src=APTOS_WORKSPACE+"/%s" % user_name,
+            name="node_config_%s" %user_name,
+        )
+        nodes_configs.append(node_config)
+
+    return nodes_configs
+
+    # nodes_config = plan.store_service_files(
+    #     service_name=service_name,
+    #     src=APTOS_WORKSPACE,
+    #     name="nodes_config",
+    # )
 
     # Remove the organizer after the work has completed
-    plan.remove_service(service_name)
+    #plan.remove_service(service_name)
 
-    return genesis_files, keys_files
+
+    # nodes_config_0 = plan.store_service_files(
+    #     service_name=service_name,
+    #     src=APTOS_WORKSPACE+"/aptos-node-0",
+    #     name="nodes_config_aptos-node-0",
+    # )
+    #
+    # nodes_config_1 = plan.store_service_files(
+    #     service_name=service_name,
+    #     src=APTOS_WORKSPACE+"/aptos-node-1",
+    #     name="nodes_config_aptos-node-1",
+    # )
+    #
+    # return nodes_config_0, nodes_config_1
 
 
 def upload_validator_config(plan):
@@ -364,13 +422,12 @@ def get_node_name(service_name, node_number):
     return "%s_%s" % (service_name, node_number)
 
 
-def get_validator_node(node_number,
+def get_validator_node(user_name,
                        validator_config_files_artifact,
-                       validator_genesis_files_artifact,
                        validator_keys_files_artifact,
                        ):
     return (
-        get_node_name(APTOS_VALIDATOR_SERVICE_NAME, node_number),
+        get_node_name(APTOS_VALIDATOR_SERVICE_NAME, user_name),
         ServiceConfig(
             image=APTOS_VALIDATOR_IMAGE,
             ports={
@@ -395,16 +452,22 @@ def get_validator_node(node_number,
                     wait=WAIT_DISABLE,
                 ),
             },
+            env_vars={
+              "USERNAME": user_name,
+            },
             files={
                 APTOS_VALIDATOR_CONFIG_FILES_TARGET_PATH: validator_config_files_artifact,
-                APTOS_GENESIS_FILES_TARGET_PATH: validator_genesis_files_artifact,
                 APTOS_IDENTITY_FILES_TARGET_PATH: validator_keys_files_artifact,
             },
-            cmd=[
-                "/usr/local/bin/aptos-node",
-                "-f",
-                APTOS_VALIDATOR_CONFIG_PATH,
+            entrypoint=[
+                'sleep',
+                '99999999'
             ],
+            # cmd=[
+            #     "/usr/local/bin/aptos-node",
+            #     "-f",
+            #     APTOS_VALIDATOR_CONFIG_PATH,
+            # ],
         ))
 
 
