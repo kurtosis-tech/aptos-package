@@ -13,13 +13,13 @@ full_node_networks:
     listen_address: "/ip4/0.0.0.0/tcp/6181"
     identity:
       type: "from_file"
-      path: "/opt/aptos/keys/keys/validator-full-node-identity.yaml"
+      path: "/opt/aptos/workspace/{{.NODE_PATH}}/validator-full-node-identity.yaml"
     discovery_method: "none"
   - network_id: "public"
     listen_address: "/ip4/0.0.0.0/tcp/6182"
     identity:
       type: "from_file"
-      path: "/opt/aptos/keys/keys/validator-full-node-identity.yaml"
+      path: "/opt/aptos/workspace/{{.NODE_PATH}}/validator-full-node-identity.yaml"
     discovery_method: "onchain"
 
 mempool:
