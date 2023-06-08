@@ -29,6 +29,10 @@ APTOS_VALIDATOR_NETWORK_FULLNODE_PROTOCOL_NAME = "tcp"
 APTOS_VALIDATOR_NETWORK_FULLNODE_PORT_NAME = "v-net-full"
 APTOS_VALIDATOR_NETWORK_FULLNODE_PORT = 6181
 
+APTOS_VALIDATOR_METRICS_PROTOCOL_NAME = "tcp"
+APTOS_VALIDATOR_METRICS_PORT_NAME = "v-metrics"
+APTOS_VALIDATOR_METRICS_PORT = 9101
+
 APTOS_VALIDATOR_CONFIG_PATH = "/opt/aptos/etc/validator.yaml"
 APTOS_VALIDATOR_CONFIG_FILES_LABEL = "aptos_validator_config_files"
 APTOS_VALIDATOR_CONFIG_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/validator_config"
@@ -79,9 +83,9 @@ APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
 WAIT_DISABLE = None
 
 # Number of nodes:
-DEFAULT_NUM_VALIDATORS = 1
-DEFAULT_NUM_VALIDATORS_FULL_NODE = 0
-DEFAULT_NUM_PUBLIC_FULL_NODE = 0
+DEFAULT_NUM_VALIDATORS = 2
+DEFAULT_NUM_VALIDATORS_FULL_NODE = 2
+DEFAULT_NUM_PUBLIC_FULL_NODE = 2
 
 GENERATE_GENESIS_ARG_KEY = "generate_genesis"
 NUM_VALIDATORS_ARG_KEY = "num_validators"
@@ -93,7 +97,7 @@ LAYOUT_YAML = """
 root_key: "0xca3579457555c80fc7bb39964eb298c414fd60f81a2f8eedb0244ec07a26e575"
 users:
     - %s
-chain_id: 12345
+chain_id: 30
 allow_new_validators: true
 epoch_duration_secs: 7200
 is_test: true
@@ -156,6 +160,7 @@ def create_and_upload_genesis_files(plan):
             image="kurtosistech/aptos-package-organizer:latest",
             env_vars={
                 "WORKSPACE": APTOS_WORKSPACE,
+                "USERNAME": APTOS_WORKSPACE_USERNAME,
             },
             ports={
                 APTOS_VALIDATOR_NETWORK_PORT_NAME: PortSpec(
@@ -229,8 +234,7 @@ def create_and_upload_genesis_files(plan):
     )
 
     # TODO: Do we need to add the public keys?
-    command = "cd $WORKSPACE/keys && /root/.local/bin/aptos genesis set-validator-configuration --username %s --validator-host %s --full-node-host %s --local-repository-dir $WORKSPACE/configuration" % (
-        APTOS_WORKSPACE_USERNAME,
+    command = "cd $WORKSPACE/keys && /root/.local/bin/aptos genesis set-validator-configuration --username $USERNAME --validator-host %s --full-node-host %s --local-repository-dir $WORKSPACE/configuration" % (
         service.ip_address + ":" + str(service.ports[APTOS_VALIDATOR_NETWORK_PORT_NAME].number),
         service.ip_address + ":" + str(service.ports[APTOS_PUBLIC_FULL_NODE_PUBLIC_NETWORK_PORT_NAME].number)
     )
@@ -378,6 +382,11 @@ def get_validator_node(node_number,
                 APTOS_VALIDATOR_NETWORK_FULLNODE_PORT_NAME: PortSpec(
                     number=APTOS_VALIDATOR_NETWORK_FULLNODE_PORT,
                     application_protocol=APTOS_VALIDATOR_NETWORK_FULLNODE_PROTOCOL_NAME,
+                    wait=WAIT_DISABLE,
+                ),
+                APTOS_VALIDATOR_METRICS_PORT_NAME: PortSpec(
+                    number=APTOS_VALIDATOR_METRICS_PORT,
+                    application_protocol=APTOS_VALIDATOR_METRICS_PROTOCOL_NAME,
                     wait=WAIT_DISABLE,
                 ),
             },

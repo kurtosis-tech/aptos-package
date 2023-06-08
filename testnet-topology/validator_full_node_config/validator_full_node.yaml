@@ -8,12 +8,19 @@ execution:
   genesis_file_location: "/opt/aptos/genesis/genesis/genesis.blob"
 
 full_node_networks:
-- network_id:
-    private: "vfn"
-  listen_address: "/ip4/0.0.0.0/tcp/6181"
-  identity:
-    type: "from_file"
-    path: "/opt/aptos/keys/keys/validator-full-node-identity.yaml"
+  - network_id:
+      private: "vfn"
+    listen_address: "/ip4/0.0.0.0/tcp/6180"
+    identity:
+      type: "from_file"
+      path: "/opt/aptos/keys/keys/validator-full-node-identity.yaml"
+    discovery_method: "none"
+  - network_id: "public"
+    listen_address: "/ip4/0.0.0.0/tcp/6181"
+    identity:
+      type: "from_file"
+      path: "/opt/aptos/keys/keys/validator-full-node-identity.yaml"
+    discovery_method: "onchain"
 
 mempool:
   shared_mempool_max_concurrent_inbound_syncs: 16 # default 4
@@ -21,7 +28,6 @@ mempool:
   default_failovers: 0 # default 1
   shared_mempool_batch_size: 200 # default 100
   shared_mempool_tick_interval_ms: 10 # default 50
-
 
 api:
   enabled: true
