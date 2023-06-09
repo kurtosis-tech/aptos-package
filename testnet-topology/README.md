@@ -24,16 +24,14 @@ You can configure this package using a JSON structure as an argument to the `kur
 
 ```javascript
 {
-    "num_validators": 2,
-    "num_validator_full_nodes": 2,
-    "num_public_full_nodes": 2
+    "num_validators": 2
 }
 ```
 
 These arguments can either be provided manually:
 
 ```bash
-kurtosis run github.com/kurtosis-tech/aptos-package/testnet-topology --enclave aptos '{"num_validators":2,"num_validator_full_nodes":2,"num_public_full_nodes":2}'
+kurtosis run github.com/kurtosis-tech/aptos-package/testnet-topology --enclave aptos '{"num_validators":2}'
 ```
 
 or by loading via a file, for instance using the [args.json](args.json) file in this repo:
