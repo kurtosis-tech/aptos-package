@@ -1,4 +1,6 @@
 # Shared
+APTOS_ROOT_KEY = "0xca3579457555c80fc7bb39964eb298c414fd60f81a2f8eedb0244ec07a26e575"
+APTOS_CHAIN_ID = "30"
 APTOS_GENESIS_FILES_LABEL = "aptos_genesis_files"
 APTOS_GENESIS_FILES_TARGET_PATH = "/opt/aptos/genesis"
 APTOS_USERNAME_PREFIX = "aptos-node"
@@ -91,8 +93,8 @@ WAIT_DISABLE = None
 
 # Number of nodes:
 DEFAULT_NUM_VALIDATORS = 2
-
 NUM_VALIDATORS_ARG_KEY = "num_validators"
+
 
 def run(plan, args):
     num_validators = args.get(NUM_VALIDATORS_ARG_KEY, DEFAULT_NUM_VALIDATORS)
@@ -110,7 +112,6 @@ def run(plan, args):
                                                           validator_genesis_files_artifact,
                                                           validator_config_files_artifact,
                                                           node_config)
-        # plan.add_service(service_name, service_config)
         services[service_name] = service_config
 
         validator_full_node_config_files_artifact = render_validator_full_node_template(plan, user_name)
@@ -127,21 +128,8 @@ def run(plan, args):
                                                             node_config)
         services[service_name] = service_config
 
-    plan.add_services(services)  # + validator_full_nodes + full_nodes))
+    plan.add_services(services)
 
-
-#    plan.print(nodes_configs)
-
-
-# # validator_nodes = [get_validator_node(num, validator_config_files_artifact, validator_genesis_files_artifact, ) for num in
-# #                    range(0, num_validators)]
-# # validator_full_nodes = [
-# #     get_validator_full_node(num, validator_full_node_config_files_artifact, validator_genesis_files_artifact,
-# #                             validator_keys_files_artifact) for num in range(0, num_validator_full_nodes)]
-# # full_nodes = [get_public_full_node(num, public_node_config_files_artifact, validator_genesis_files_artifact,
-# #                                    validator_keys_files_artifact) for num in range(0, num_public_full_nodes)]
-# #
-#plan.add_services(dict(services))  # + validator_full_nodes + full_nodes))
 
 def render_validator_template(plan, user_name):
     config_file_template = read_file(APTOS_VALIDATOR_CONFIG_FILES_SOURCE_PATH)
@@ -200,9 +188,9 @@ def create_and_upload_genesis_files(plan, user_names):
 
     layout_yaml = """
 ---
-root_key: "0xca3579457555c80fc7bb39964eb298c414fd60f81a2f8eedb0244ec07a26e575"
+root_key: "%s"
 users: [%s]
-chain_id: 30
+chain_id: %s
 allow_new_validators: true
 epoch_duration_secs: 7200
 is_test: true
@@ -218,7 +206,11 @@ total_supply: ~
 employee_vesting_start: 1663456089
 employee_vesting_period_duration: 300
 
-""" % serialized_usernames
+""" % (
+        APTOS_ROOT_KEY,
+        serialized_usernames,
+        APTOS_CHAIN_ID
+    )
 
     plan.print(layout_yaml)
     service_name = "genesis_organizer"
