@@ -16,7 +16,7 @@ APTOS_GENESIS_ORGANIZER_FILES_TARGET_PATH = "/opt/aptos/organizer"
 APTOS_WORKSPACE = "/root/workspace"
 
 # Genesis organizer
-GENESIS_ORGANIZER_SERVICE_NAME="genesis_organizer"
+GENESIS_ORGANIZER_SERVICE_NAME = "genesis_organizer"
 
 # Aptos Validator Node
 APTOS_VALIDATOR_IMAGE = "aptoslabs/validator:testnet"
@@ -187,7 +187,6 @@ def generate_user_names(num_validators):
 
 
 def create_and_upload_genesis_files(plan, user_names):
-
     # Upload files needed by the Genesis Organizer to the enclave
     plan.upload_files(
         src=APTOS_GENESIS_ORGANIZER_FILES_SOURCE_PATH,
@@ -223,7 +222,7 @@ def create_and_upload_genesis_files(plan, user_names):
     )
 
     # Generate and upload layout.yaml
-    layout_yaml =create_layout_yaml(APTOS_ROOT_KEY, APTOS_CHAIN_ID, user_names)
+    layout_yaml = create_layout_yaml(APTOS_ROOT_KEY, APTOS_CHAIN_ID, user_names)
     plan.print(layout_yaml)
     plan.wait(
         service_name=GENESIS_ORGANIZER_SERVICE_NAME,
@@ -494,6 +493,7 @@ def get_public_full_node(node_number,
             ],
         ))
 
+
 def create_layout_yaml(root_key, chain_id, user_names):
     serialized_usernames = ', '.join(user_names)
     return """
@@ -516,8 +516,4 @@ total_supply: ~
 employee_vesting_start: 1663456089
 employee_vesting_period_duration: 300
 
-""" % (
-        root_key,
-        serialized_usernames,
-        chain_id
-    )
+""" % (root_key, serialized_usernames, chain_id)
