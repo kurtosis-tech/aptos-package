@@ -3,7 +3,7 @@ APTOS_ROOT_KEY = "0xca3579457555c80fc7bb39964eb298c414fd60f81a2f8eedb0244ec07a26
 APTOS_CHAIN_ID = "30"
 APTOS_GENESIS_FILES_LABEL = "aptos_genesis_files"
 APTOS_GENESIS_FILES_TARGET_PATH = "/opt/aptos/genesis"
-APTOS_USERNAME_PREFIX = "aptos-node"
+APTOS_USERNAME_PREFIX = "node"
 APTOS_NODE_CONFIG_PREFIX = "node_config"
 
 APTOS_FILES_TARGET_PATH = "/opt/aptos/"
@@ -20,7 +20,7 @@ GENESIS_ORGANIZER_SERVICE_NAME = "genesis_organizer"
 
 # Aptos Validator Node
 APTOS_VALIDATOR_IMAGE = "aptoslabs/validator:testnet"
-APTOS_VALIDATOR_SERVICE_NAME = "validator"
+APTOS_VALIDATOR_SERVICE_NAME = "v"
 
 APTOS_VALIDATOR_API_PROTOCOL_NAME = "http"
 APTOS_VALIDATOR_API_PORT_NAME = "v-api"
@@ -46,7 +46,7 @@ APTOS_VALIDATOR_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
 
 # Aptos Validator Full Node
 APTOS_VALIDATOR_FULL_NODE_IMAGE = "aptoslabs/validator:testnet"
-APTOS_VALIDATOR_FULL_NODE_SERVICE_NAME = "validator-full-node"
+APTOS_VALIDATOR_FULL_NODE_SERVICE_NAME = "vfn"
 
 APTOS_VALIDATOR_FULL_NODE_API_PROTOCOL_NAME = "http"
 APTOS_VALIDATOR_FULL_NODE_PORT_NAME = "v-full"
@@ -72,7 +72,7 @@ APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
 
 # Aptos Public full node
 APTOS_PUBLIC_FULL_NODE_IMAGE = APTOS_VALIDATOR_FULL_NODE_IMAGE
-APTOS_PUBLIC_FULL_NODE_SERVICE_NAME = "public_full_node"
+APTOS_PUBLIC_FULL_NODE_SERVICE_NAME = "pfn"
 
 APTOS_PUBLIC_FULL_NODE_API_PROTOCOL_NAME = "http"
 APTOS_PUBLIC_FULL_NODE_PORT_NAME = "p-pub-full"
@@ -133,11 +133,13 @@ def run(plan, args):
 
     plan.add_services(services)
 
+def render_template_name(label, user_name):
+    return label + "_" + user_name
 
 def render_validator_template(plan, user_name):
     config_file_template = read_file(APTOS_VALIDATOR_CONFIG_FILES_SOURCE_PATH)
     validator_yaml_artifact = plan.render_templates(
-        name=APTOS_VALIDATOR_CONFIG_FILES_LABEL + "_" + user_name,
+        name=render_template_name(APTOS_VALIDATOR_CONFIG_FILES_LABEL, user_name),
         config={
             APTOS_VALIDATOR_CONFIG_FILES_TARGET_FILE: struct(
                 template=config_file_template,
@@ -153,7 +155,7 @@ def render_validator_template(plan, user_name):
 def render_validator_full_node_template(plan, user_name):
     config_file_template = read_file(APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_SOURCE_PATH)
     artifact = plan.render_templates(
-        name=APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_LABEL + "_" + user_name,
+        name=render_template_name(APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_LABEL, user_name),
         config={
             APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_TARGET_FILE: struct(
                 template=config_file_template,
@@ -169,7 +171,7 @@ def render_validator_full_node_template(plan, user_name):
 def render_public_full_node_template(plan, user_name):
     config_file_template = read_file(APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_SOURCE_PATH)
     artifact = plan.render_templates(
-        name=APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_LABEL + "_" + user_name,
+        name=render_template_name(APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_LABEL, user_name),
         config={
             APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_TARGET_FILE: struct(
                 template=config_file_template,
@@ -183,7 +185,7 @@ def render_public_full_node_template(plan, user_name):
 
 
 def generate_user_names(num_validators):
-    return [APTOS_USERNAME_PREFIX + '-{}'.format(x) for x in range(0, num_validators)]
+    return [APTOS_USERNAME_PREFIX + '_{}'.format(x) for x in range(0, num_validators)]
 
 
 def create_and_upload_genesis_files(plan, user_names):
