@@ -16,7 +16,7 @@ consensus:
       from_file:
         waypoint:
           from_file: "/opt/aptos/genesis/genesis/waypoint.txt"
-        identity_blob_path: "/opt/aptos/keys/keys/validator-identity.yaml"
+        identity_blob_path: "/opt/aptos/workspace/{{.NODE_PATH}}/validator-identity.yaml"
 
 execution:
   genesis_file_location: "/opt/aptos/genesis/genesis/genesis.blob"
@@ -67,10 +67,10 @@ validator_network:
   discovery_methods: []
   identity:
     type: "from_file"
-    path: "/opt/aptos/keys/keys/validator-identity.yaml"
+    path: "/opt/aptos/workspace/{{.NODE_PATH}}/validator-identity.yaml"
   listen_address: /ip4/0.0.0.0/tcp/6180
   mutual_authentication: true
-  network_id: validator
+  network_id: "validator"
   runtime_threads: 1
   inbound_rx_buffer_size_bytes: 3145728
   inbound_tx_buffer_size_bytes: 524288
@@ -90,18 +90,17 @@ validator_network:
   max_message_size: 67108864
 
 full_node_networks:
-  - network_id:
-      private: "vfn"
+  - network_id: "vfn"
     listen_address: "/ip4/0.0.0.0/tcp/6181"
     identity:
       type: "from_file"
-      path: "/opt/aptos/keys/keys/validator-full-node-identity.yaml"
+      path: "/opt/aptos/workspace/{{.NODE_PATH}}/validator-full-node-identity.yaml"
     discovery_method: "none"
   - network_id: "public"
     listen_address: "/ip4/0.0.0.0/tcp/6182"
     identity:
       type: "from_file"
-      path: "/opt/aptos/keys/keys/validator-full-node-identity.yaml"
+      path: "/opt/aptos/workspace/{{.NODE_PATH}}/validator-full-node-identity.yaml"
     discovery_method: "onchain"
 
 api:
