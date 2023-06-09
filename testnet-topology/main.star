@@ -1,22 +1,20 @@
 # Shared
 APTOS_ROOT_KEY = "0xca3579457555c80fc7bb39964eb298c414fd60f81a2f8eedb0244ec07a26e575"
 APTOS_CHAIN_ID = "30"
-APTOS_GENESIS_FILES_LABEL = "aptos_genesis_files"
 APTOS_GENESIS_FILES_TARGET_PATH = "/opt/aptos/genesis"
 APTOS_USERNAME_PREFIX = "node"
-APTOS_NODE_CONFIG_PREFIX = "node_config"
+APTOS_NODE_IDENTITY_CONFIG_PREFIX = "identity"
 
 APTOS_FILES_TARGET_PATH = "/opt/aptos/"
 APTOS_IDENTITY_FILES_TARGET_PATH = "/opt/aptos/workspace/"
-
-APTOS_GENESIS_ORGANIZER_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/organizer_files"
-APTOS_GENESIS_ORGANIZER_FILES_LABEL = "aptos_genesis_organizer_files"
-APTOS_GENESIS_ORGANIZER_FILES_TARGET_PATH = "/opt/aptos/organizer"
 
 APTOS_WORKSPACE = "/root/workspace"
 
 # Genesis organizer
 GENESIS_ORGANIZER_SERVICE_NAME = "genesis_organizer"
+GENESIS_ORGANIZER_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/organizer_files"
+GENESIS_ORGANIZER_FILES_LABEL = "genesis_organizer_files"
+GENESIS_ORGANIZER_FILES_TARGET_PATH = "/opt/aptos/organizer"
 
 # Aptos Validator Node
 APTOS_VALIDATOR_IMAGE = "aptoslabs/validator:testnet"
@@ -95,7 +93,7 @@ APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
 WAIT_DISABLE = None
 
 # Number of nodes:
-DEFAULT_NUM_VALIDATORS = 2
+DEFAULT_NUM_VALIDATORS = 3
 NUM_VALIDATORS_ARG_KEY = "num_validators"
 
 
@@ -104,37 +102,39 @@ def run(plan, args):
 
     user_names = generate_user_names(num_validators)
 
-    validator_genesis_files_artifact, nodes_configs = create_and_upload_genesis_files(plan, user_names)
+    validator_genesis_files_artifact, identities = create_and_upload_genesis_files(plan, user_names)
 
     services = {}
-    for i in range(0, len(nodes_configs)):
+    for i in range(0, len(identities)):
         user_name = user_names[i]
-        node_config = nodes_configs[i]
+        identity = identities[i]
         validator_config_files_artifact = render_validator_template(plan, user_name)
         service_name, service_config = get_validator_node(user_name,
                                                           validator_genesis_files_artifact,
                                                           validator_config_files_artifact,
-                                                          node_config)
+                                                          identity)
         services[service_name] = service_config
 
         validator_full_node_config_files_artifact = render_validator_full_node_template(plan, user_name)
         service_name, service_config = get_validator_full_node(user_name,
                                                                validator_genesis_files_artifact,
                                                                validator_full_node_config_files_artifact,
-                                                               node_config)
+                                                               identity)
         services[service_name] = service_config
 
         public_full_node_config_files_artifact = render_public_full_node_template(plan, user_name)
         service_name, service_config = get_public_full_node(user_name,
                                                             validator_genesis_files_artifact,
                                                             public_full_node_config_files_artifact,
-                                                            node_config)
+                                                            identity)
         services[service_name] = service_config
 
     plan.add_services(services)
 
+
 def render_template_name(label, user_name):
     return label + "_" + user_name
+
 
 def render_validator_template(plan, user_name):
     config_file_template = read_file(APTOS_VALIDATOR_CONFIG_FILES_SOURCE_PATH)
@@ -191,8 +191,8 @@ def generate_user_names(num_validators):
 def create_and_upload_genesis_files(plan, user_names):
     # Upload files needed by the Genesis Organizer to the enclave
     plan.upload_files(
-        src=APTOS_GENESIS_ORGANIZER_FILES_SOURCE_PATH,
-        name=APTOS_GENESIS_ORGANIZER_FILES_LABEL,
+        src=GENESIS_ORGANIZER_FILES_SOURCE_PATH,
+        name=GENESIS_ORGANIZER_FILES_LABEL,
     )
 
     # Run ubuntu amd64 as Aptos CLI does not support arm
@@ -204,7 +204,7 @@ def create_and_upload_genesis_files(plan, user_names):
                 "WORKSPACE": APTOS_WORKSPACE,
             },
             files={
-                APTOS_GENESIS_ORGANIZER_FILES_TARGET_PATH: APTOS_GENESIS_ORGANIZER_FILES_LABEL,
+                GENESIS_ORGANIZER_FILES_TARGET_PATH: GENESIS_ORGANIZER_FILES_LABEL,
             }
         ),
     )
@@ -245,7 +245,7 @@ def create_and_upload_genesis_files(plan, user_names):
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
-            "mv %s/framework.mrb $WORKSPACE/configuration/framework.mrb" % APTOS_GENESIS_ORGANIZER_FILES_TARGET_PATH
+            "mv %s/framework.mrb $WORKSPACE/configuration/framework.mrb" % GENESIS_ORGANIZER_FILES_TARGET_PATH
         ]),
         field="code",
         assertion="==",
@@ -352,17 +352,17 @@ def create_and_upload_genesis_files(plan, user_names):
         name="genesis_files",
     )
 
-    # Upload the validator node configs
-    nodes_configs = []
+    # Upload the validator node identities
+    node_identities = []
     for user_name in user_names:
-        node_config = plan.store_service_files(
+        node_identity = plan.store_service_files(
             service_name=GENESIS_ORGANIZER_SERVICE_NAME,
             src=APTOS_WORKSPACE + "/%s" % user_name,
-            name="node_config_%s" % user_name,
+            name="%s_%s" % (APTOS_NODE_IDENTITY_CONFIG_PREFIX, user_name),
         )
-        nodes_configs.append(node_config)
+        node_identities.append(node_identity)
 
-    return genesis_files, nodes_configs
+    return genesis_files, node_identities
 
 
 def get_node_name(service_name, node_number):
