@@ -15,6 +15,9 @@ APTOS_GENESIS_ORGANIZER_FILES_TARGET_PATH = "/opt/aptos/organizer"
 
 APTOS_WORKSPACE = "/root/workspace"
 
+# Genesis organizer
+GENESIS_ORGANIZER_SERVICE_NAME="genesis_organizer"
+
 # Aptos Validator Node
 APTOS_VALIDATOR_IMAGE = "aptoslabs/validator:testnet"
 APTOS_VALIDATOR_SERVICE_NAME = "validator"
@@ -184,37 +187,8 @@ def generate_user_names(num_validators):
 
 
 def create_and_upload_genesis_files(plan, user_names):
-    serialized_usernames = ', '.join(user_names)
 
-    layout_yaml = """
----
-root_key: "%s"
-users: [%s]
-chain_id: %s
-allow_new_validators: true
-epoch_duration_secs: 7200
-is_test: true
-min_stake: 1
-min_voting_threshold: 1
-max_stake: 100000000000000000
-recurring_lockup_duration_secs: 86400
-required_proposer_stake: 100000000000000
-rewards_apy_percentage: 10
-voting_duration_secs: 43200
-voting_power_increase_limit: 20
-total_supply: ~
-employee_vesting_start: 1663456089
-employee_vesting_period_duration: 300
-
-""" % (
-        APTOS_ROOT_KEY,
-        serialized_usernames,
-        APTOS_CHAIN_ID
-    )
-
-    plan.print(layout_yaml)
-    service_name = "genesis_organizer"
-
+    # Upload files needed by the Genesis Organizer to the enclave
     plan.upload_files(
         src=APTOS_GENESIS_ORGANIZER_FILES_SOURCE_PATH,
         name=APTOS_GENESIS_ORGANIZER_FILES_LABEL,
@@ -222,7 +196,7 @@ employee_vesting_period_duration: 300
 
     # Run ubuntu amd64 as Aptos CLI does not support arm
     plan.add_service(
-        name=service_name,
+        name=GENESIS_ORGANIZER_SERVICE_NAME,
         config=ServiceConfig(
             image="kurtosistech/aptos-package-organizer:latest",
             env_vars={
@@ -234,8 +208,9 @@ employee_vesting_period_duration: 300
         ),
     )
 
+    # Install Aptos CLI
     plan.wait(
-        service_name=service_name,
+        service_name=GENESIS_ORGANIZER_SERVICE_NAME,
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
@@ -247,9 +222,11 @@ employee_vesting_period_duration: 300
         timeout="30s",
     )
 
-    # Generate layout.yaml
+    # Generate and upload layout.yaml
+    layout_yaml =create_layout_yaml(APTOS_ROOT_KEY, APTOS_CHAIN_ID, user_names)
+    plan.print(layout_yaml)
     plan.wait(
-        service_name=service_name,
+        service_name=GENESIS_ORGANIZER_SERVICE_NAME,
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
@@ -261,9 +238,9 @@ employee_vesting_period_duration: 300
         timeout="5m",
     )
 
-    # Generate framework.mrb
+    # Get framework.mrb
     plan.wait(
-        service_name=service_name,
+        service_name=GENESIS_ORGANIZER_SERVICE_NAME,
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
@@ -275,6 +252,7 @@ employee_vesting_period_duration: 300
         timeout="5m",
     )
 
+    # For each user name: generate keys and validator configurations
     for user_name in user_names:
         user_dir = "%s/%s" % (
             APTOS_WORKSPACE,
@@ -292,7 +270,7 @@ employee_vesting_period_duration: 300
         )
 
         plan.wait(
-            service_name=service_name,
+            service_name=GENESIS_ORGANIZER_SERVICE_NAME,
             recipe=ExecRecipe(command=[
                 "bash",
                 "-c",
@@ -314,7 +292,7 @@ employee_vesting_period_duration: 300
 
         plan.print("Executing command: %s" % command)
         plan.wait(
-            service_name=service_name,
+            service_name=GENESIS_ORGANIZER_SERVICE_NAME,
             recipe=ExecRecipe(command=[
                 "bash",
                 "-c",
@@ -326,8 +304,9 @@ employee_vesting_period_duration: 300
             timeout="5m",
         )
 
+    # Once all validator configs have been created, create the genesis
     plan.wait(
-        service_name=service_name,
+        service_name=GENESIS_ORGANIZER_SERVICE_NAME,
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
@@ -339,9 +318,9 @@ employee_vesting_period_duration: 300
         timeout="60s",
     )
 
-    # Verify that genesis.blob and waypoint.txt exists before uploading to the enclave
+    # Verify that genesis.blob and waypoint.txt exists before attempting to upload to the enclave
     plan.wait(
-        service_name=service_name,
+        service_name=GENESIS_ORGANIZER_SERVICE_NAME,
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
@@ -353,7 +332,7 @@ employee_vesting_period_duration: 300
         timeout="60s",
     )
     plan.wait(
-        service_name=service_name,
+        service_name=GENESIS_ORGANIZER_SERVICE_NAME,
         recipe=ExecRecipe(command=[
             "bash",
             "-c",
@@ -365,16 +344,18 @@ employee_vesting_period_duration: 300
         timeout="60s",
     )
 
+    # Upload the genesis files
     genesis_files = plan.store_service_files(
-        service_name=service_name,
+        service_name=GENESIS_ORGANIZER_SERVICE_NAME,
         src="%s/genesis" % APTOS_WORKSPACE,
         name="genesis_files",
     )
 
+    # Upload the validator node configs
     nodes_configs = []
     for user_name in user_names:
         node_config = plan.store_service_files(
-            service_name=service_name,
+            service_name=GENESIS_ORGANIZER_SERVICE_NAME,
             src=APTOS_WORKSPACE + "/%s" % user_name,
             name="node_config_%s" % user_name,
         )
@@ -512,3 +493,31 @@ def get_public_full_node(node_number,
                 APTOS_PUBLIC_FULL_NODE_CONFIG_PATH,
             ],
         ))
+
+def create_layout_yaml(root_key, chain_id, user_names):
+    serialized_usernames = ', '.join(user_names)
+    return """
+---
+root_key: "%s"
+users: [%s]
+chain_id: %s
+allow_new_validators: true
+epoch_duration_secs: 7200
+is_test: true
+min_stake: 1
+min_voting_threshold: 1
+max_stake: 100000000000000000
+recurring_lockup_duration_secs: 86400
+required_proposer_stake: 100000000000000
+rewards_apy_percentage: 10
+voting_duration_secs: 43200
+voting_power_increase_limit: 20
+total_supply: ~
+employee_vesting_start: 1663456089
+employee_vesting_period_duration: 300
+
+""" % (
+        root_key,
+        serialized_usernames,
+        chain_id
+    )
