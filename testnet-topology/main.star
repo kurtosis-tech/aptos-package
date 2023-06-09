@@ -102,29 +102,29 @@ def run(plan, args):
 
     user_names = generate_user_names(num_validators)
 
-    validator_genesis_files_artifact, identities = create_and_upload_genesis_files(plan, user_names)
+    genesis_files_artifact, identities = create_and_upload_genesis_files(plan, user_names)
 
     services = {}
     for i in range(0, len(identities)):
         user_name = user_names[i]
         identity = identities[i]
-        validator_config_files_artifact = render_validator_template(plan, user_name)
+        validator_config_files_artifact = render_validator_node_template(plan, user_name)
         service_name, service_config = get_validator_node(user_name,
-                                                          validator_genesis_files_artifact,
+                                                          genesis_files_artifact,
                                                           validator_config_files_artifact,
                                                           identity)
         services[service_name] = service_config
 
         validator_full_node_config_files_artifact = render_validator_full_node_template(plan, user_name)
         service_name, service_config = get_validator_full_node(user_name,
-                                                               validator_genesis_files_artifact,
+                                                               genesis_files_artifact,
                                                                validator_full_node_config_files_artifact,
                                                                identity)
         services[service_name] = service_config
 
         public_full_node_config_files_artifact = render_public_full_node_template(plan, user_name)
         service_name, service_config = get_public_full_node(user_name,
-                                                            validator_genesis_files_artifact,
+                                                            genesis_files_artifact,
                                                             public_full_node_config_files_artifact,
                                                             identity)
         services[service_name] = service_config
@@ -132,56 +132,52 @@ def run(plan, args):
     plan.add_services(services)
 
 
-def render_template_name(label, user_name):
-    return label + "_" + user_name
-
-
-def render_validator_template(plan, user_name):
-    config_file_template = read_file(APTOS_VALIDATOR_CONFIG_FILES_SOURCE_PATH)
-    validator_yaml_artifact = plan.render_templates(
-        name=render_template_name(APTOS_VALIDATOR_CONFIG_FILES_LABEL, user_name),
-        config={
-            APTOS_VALIDATOR_CONFIG_FILES_TARGET_FILE: struct(
-                template=config_file_template,
-                data={
-                    "NODE_PATH": user_name,
-                }
-            ),
-        }
+def render_validator_node_template(plan, user_name):
+    return render_yaml_template(
+        plan,
+        APTOS_VALIDATOR_CONFIG_FILES_SOURCE_PATH,
+        APTOS_VALIDATOR_CONFIG_FILES_LABEL,
+        APTOS_VALIDATOR_CONFIG_FILES_TARGET_FILE,
+        user_name,
     )
-    return validator_yaml_artifact
 
 
 def render_validator_full_node_template(plan, user_name):
-    config_file_template = read_file(APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_SOURCE_PATH)
-    artifact = plan.render_templates(
-        name=render_template_name(APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_LABEL, user_name),
-        config={
-            APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_TARGET_FILE: struct(
-                template=config_file_template,
-                data={
-                    "NODE_PATH": user_name,
-                }
-            ),
-        }
+    return render_yaml_template(
+        plan,
+        APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_SOURCE_PATH,
+        APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_LABEL,
+        APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_TARGET_FILE,
+        user_name,
     )
-    return artifact
 
 
 def render_public_full_node_template(plan, user_name):
-    config_file_template = read_file(APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_SOURCE_PATH)
-    artifact = plan.render_templates(
-        name=render_template_name(APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_LABEL, user_name),
+    return render_yaml_template(
+        plan,
+        APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_SOURCE_PATH,
+        APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_LABEL,
+        APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_TARGET_FILE,
+        user_name,
+    )
+
+
+def render_yaml_template(plan, config_files_source_path, config_files_label, config_files_target_file, user_name):
+    return plan.render_templates(
+        name=render_template_name(config_files_label, user_name),
         config={
-            APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_TARGET_FILE: struct(
-                template=config_file_template,
+            config_files_target_file: struct(
+                template=read_file(config_files_source_path),
                 data={
                     "NODE_PATH": user_name,
                 }
             ),
         }
     )
-    return artifact
+
+
+def render_template_name(label, user_name):
+    return label + "_" + user_name
 
 
 def generate_user_names(num_validators):
