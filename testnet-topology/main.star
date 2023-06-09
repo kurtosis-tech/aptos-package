@@ -1,7 +1,4 @@
-#load ("yaml.star", "yaml")
 # Shared
-
-#APTOS_GENESIS_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/genesis_files"
 APTOS_GENESIS_FILES_LABEL = "aptos_genesis_files"
 APTOS_GENESIS_FILES_TARGET_PATH = "/opt/aptos/genesis"
 APTOS_USERNAME_PREFIX = "aptos-node"
@@ -15,9 +12,8 @@ APTOS_GENESIS_ORGANIZER_FILES_LABEL = "aptos_genesis_organizer_files"
 APTOS_GENESIS_ORGANIZER_FILES_TARGET_PATH = "/opt/aptos/organizer"
 
 APTOS_WORKSPACE = "/root/workspace"
-#GENESIS_CONFIGURATION_FILES="%s/configuration"
 
-# Aptos Validator
+# Aptos Validator Node
 APTOS_VALIDATOR_IMAGE = "aptoslabs/validator:testnet"
 APTOS_VALIDATOR_SERVICE_NAME = "validator"
 
@@ -37,8 +33,8 @@ APTOS_VALIDATOR_METRICS_PROTOCOL_NAME = "tcp"
 APTOS_VALIDATOR_METRICS_PORT_NAME = "v-metrics"
 APTOS_VALIDATOR_METRICS_PORT = 9101
 
-APTOS_VALIDATOR_CONFIG_PATH = "/opt/aptos/etc/validator.yaml"
-APTOS_VALIDATOR_CONFIG_FILES_LABEL = "aptos_validator_config_files"
+APTOS_VALIDATOR_CONFIG_FILE_PATH = "/opt/aptos/etc/validator.yaml"
+APTOS_VALIDATOR_CONFIG_FILES_LABEL = "v_config_files"
 APTOS_VALIDATOR_CONFIG_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/validator_config/validator.yaml"
 APTOS_VALIDATOR_CONFIG_FILES_TARGET_FILE = "validator.yaml"
 APTOS_VALIDATOR_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
@@ -64,7 +60,7 @@ APTOS_VALIDATOR_FULL_NODE_METRICS_PORT_NAME = "v-full-metrics"
 APTOS_VALIDATOR_FULL_NODE_METRICS_PORT = 9101
 
 APTOS_VALIDATOR_FULL_NODE_CONFIG_PATH = "/opt/aptos/etc/validator_full_node.yaml"
-APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_LABEL = "aptos_validator_full_node_config_files"
+APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_LABEL = "vfn_config_files"
 APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/validator_full_node_config/validator_full_node.yaml"
 APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_TARGET_FILE = "validator_full_node.yaml"
 APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
@@ -86,7 +82,7 @@ APTOS_PUBLIC_FULL_NODE_METRICS_PORT_NAME = "p-full-metric"
 APTOS_PUBLIC_FULL_NODE_METRICS_PORT = 9101
 
 APTOS_PUBLIC_FULL_NODE_CONFIG_PATH = "/opt/aptos/etc/public_full_node.yaml"
-APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_LABEL = "aptos_public_full_node_config_files"
+APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_LABEL = "pfn_config_files"
 APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/public_full_node_config/public_full_node.yaml"
 APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_TARGET_FILE = "public_full_node.yaml"
 APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
@@ -95,14 +91,8 @@ WAIT_DISABLE = None
 
 # Number of nodes:
 DEFAULT_NUM_VALIDATORS = 2
-DEFAULT_NUM_VALIDATORS_FULL_NODE = 2
-DEFAULT_NUM_PUBLIC_FULL_NODE = 2
 
-GENERATE_GENESIS_ARG_KEY = "generate_genesis"
 NUM_VALIDATORS_ARG_KEY = "num_validators"
-NUM_VALIDATOR_FULL_NODES_ARG_KEY = "num_validator_full_nodes"
-NUM_PUBLIC_FULL_NODES_ARG_KEY = "num_public_full_nodes"
-
 
 def run(plan, args):
     num_validators = args.get(NUM_VALIDATORS_ARG_KEY, DEFAULT_NUM_VALIDATORS)
@@ -136,10 +126,6 @@ def run(plan, args):
                                                             public_full_node_config_files_artifact,
                                                             node_config)
         services[service_name] = service_config
-
-    # num_validators = args.get(NUM_VALIDATORS_ARG_KEY, DEFAULT_NUM_VALIDATORS)
-    # num_validator_full_nodes = args.get(NUM_VALIDATOR_FULL_NODES_ARG_KEY, DEFAULT_NUM_VALIDATORS_FULL_NODE)
-    # num_public_full_nodes = args.get(NUM_PUBLIC_FULL_NODES_ARG_KEY, DEFAULT_NUM_PUBLIC_FULL_NODE)
 
     plan.add_services(services)  # + validator_full_nodes + full_nodes))
 
@@ -448,7 +434,7 @@ def get_validator_node(user_name,
             cmd=[
                 "/usr/local/bin/aptos-node",
                 "-f",
-                APTOS_VALIDATOR_CONFIG_PATH,
+                APTOS_VALIDATOR_CONFIG_FILE_PATH,
             ],
         ))
 
