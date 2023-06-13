@@ -11,7 +11,7 @@ APTOS_IDENTITY_FILES_TARGET_PATH = "/opt/aptos/workspace/"
 APTOS_WORKSPACE = "/root/workspace"
 
 # Genesis organizer
-GENESIS_ORGANIZER_SERVICE_NAME = "genesis_organizer"
+GENESIS_ORGANIZER_SERVICE_NAME = "genesis-organizer"
 GENESIS_ORGANIZER_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/organizer_files"
 GENESIS_ORGANIZER_FILES_LABEL = "genesis_organizer_files"
 GENESIS_ORGANIZER_FILES_TARGET_PATH = "/opt/aptos/organizer"
@@ -93,7 +93,7 @@ APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
 WAIT_DISABLE = None
 
 # Number of nodes:
-DEFAULT_NUM_VALIDATORS = 3
+DEFAULT_NUM_VALIDATORS = 2
 NUM_VALIDATORS_ARG_KEY = "num_validators"
 
 
@@ -177,11 +177,11 @@ def render_yaml_template(plan, config_files_source_path, config_files_label, con
 
 
 def render_template_name(label, user_name):
-    return label + "_" + user_name
+    return label + "-" + user_name
 
 
 def generate_user_names(num_validators):
-    return [APTOS_USERNAME_PREFIX + '_{}'.format(x) for x in range(0, num_validators)]
+    return [APTOS_USERNAME_PREFIX + '-{}'.format(x) for x in range(0, num_validators)]
 
 
 def create_and_upload_genesis_files(plan, user_names):
@@ -255,12 +255,12 @@ def create_and_upload_genesis_files(plan, user_names):
             APTOS_WORKSPACE,
             user_name,
         )
-        validator_host = "%s_%s:%d" % (
+        validator_host = "%s-%s:%d" % (
             APTOS_VALIDATOR_SERVICE_NAME,
             user_name,
             APTOS_VALIDATOR_NETWORK_PORT,
         )
-        validator_full_node_host = "%s_%s:%d" % (
+        validator_full_node_host = "%s-%s:%d" % (
             APTOS_VALIDATOR_FULL_NODE_SERVICE_NAME,
             user_name,
             APTOS_VALIDATOR_FULL_NODE_PUBLIC_NETWORK_PORT,
@@ -354,7 +354,7 @@ def create_and_upload_genesis_files(plan, user_names):
         node_identity = plan.store_service_files(
             service_name=GENESIS_ORGANIZER_SERVICE_NAME,
             src=APTOS_WORKSPACE + "/%s" % user_name,
-            name="%s_%s" % (APTOS_NODE_IDENTITY_CONFIG_PREFIX, user_name),
+            name="%s-%s" % (APTOS_NODE_IDENTITY_CONFIG_PREFIX, user_name),
         )
         node_identities.append(node_identity)
 
@@ -362,7 +362,7 @@ def create_and_upload_genesis_files(plan, user_names):
 
 
 def get_node_name(service_name, node_number):
-    return "%s_%s" % (service_name, node_number)
+    return "%s-%s" % (service_name, node_number)
 
 
 def get_validator_node(user_name,
