@@ -9,7 +9,6 @@ echo "$script_dirpath"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-TAG="latest"
 IMAGE="kurtosistech/aptos-package-organizer"
 
 # ==================================================================================================
@@ -17,13 +16,17 @@ IMAGE="kurtosistech/aptos-package-organizer"
 # ==================================================================================================
 
 # The below is adopted from: https://github.com/kurtosis-tech/kurtosis/blob/2c1ca7a1ad90668108ccf3dfd3aa71708164163e/scripts/docker-image-builder.sh#L60
-#buildx_platform_arg="linux/arm64,linux/amd64"
-buildx_platform_arg="linux/amd64"
+buildx_platform_arg="linux/arm64,linux/amd64"
+#buildx_platform_arg="linux/amd64"
 kurtosis_docker_builder="kurtosis-docker-builder"
 docker_buildx_context='kurtosis-docker-builder-context'
-image_tags_concatenated="$IMAGE:$TAG"
-dockerfile_filepath="${script_dirpath}//Dockerfile"
+dockerfile_filepath="${script_dirpath}/Dockerfile"
 dockerfile_dirpath="."
+
+version_tag="$(bash get-docker-tag.sh)"
+image_tags_concatenated="-t $IMAGE:$version_tag -t $IMAGE:latest"
+
+echo "Building image: $IMAGE:$version_tag and $IMAGE:latest"
 
 if docker buildx inspect "${kurtosis_docker_builder}" &>/dev/null; then
   echo "Removing docker buildx builder ${kurtosis_docker_builder} as it seems to already exist"
@@ -51,8 +54,8 @@ if ! docker buildx create --use --name "${kurtosis_docker_builder}" "${docker_bu
 fi
 
 ## Actually build the Docker image
-#docker_buildx_cmd="docker buildx build --load --platform ${buildx_platform_arg} -t ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
-docker_buildx_cmd="docker buildx build --push --platform ${buildx_platform_arg} -t ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
+#docker_buildx_cmd="docker buildx build --load --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
+docker_buildx_cmd="docker buildx build --push --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
 echo "Running the following docker buildx command:"
 echo "${docker_buildx_cmd}"
 if ! eval "${docker_buildx_cmd}"; then
