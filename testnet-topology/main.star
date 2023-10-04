@@ -12,7 +12,7 @@ APTOS_WORKSPACE = "/root/workspace"
 
 # Genesis organizer
 GENESIS_ORGANIZER_SERVICE_NAME = "genesis-organizer"
-GENESIS_ORGANIZER_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/organizer_files"
+GENESIS_ORGANIZER_FILES_SOURCE_PATH = "./organizer_files"
 GENESIS_ORGANIZER_FILES_LABEL = "genesis_organizer_files"
 GENESIS_ORGANIZER_FILES_TARGET_PATH = "/opt/aptos/organizer"
 
@@ -38,7 +38,7 @@ APTOS_VALIDATOR_METRICS_PORT = 9101
 
 APTOS_VALIDATOR_CONFIG_FILE_PATH = "/opt/aptos/etc/validator.yaml"
 APTOS_VALIDATOR_CONFIG_FILES_LABEL = "v_config_files"
-APTOS_VALIDATOR_CONFIG_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/validator_config/validator.yaml"
+APTOS_VALIDATOR_CONFIG_FILES_SOURCE_PATH = "./validator_config/validator.yaml"
 APTOS_VALIDATOR_CONFIG_FILES_TARGET_FILE = "validator.yaml"
 APTOS_VALIDATOR_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
 
@@ -64,7 +64,7 @@ APTOS_VALIDATOR_FULL_NODE_METRICS_PORT = 9101
 
 APTOS_VALIDATOR_FULL_NODE_CONFIG_PATH = "/opt/aptos/etc/validator_full_node.yaml"
 APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_LABEL = "vfn_config_files"
-APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/validator_full_node_config/validator_full_node.yaml"
+APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_SOURCE_PATH = "./validator_full_node_config/validator_full_node.yaml"
 APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_TARGET_FILE = "validator_full_node.yaml"
 APTOS_VALIDATOR_FULL_NODE_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
 
@@ -86,7 +86,7 @@ APTOS_PUBLIC_FULL_NODE_METRICS_PORT = 9101
 
 APTOS_PUBLIC_FULL_NODE_CONFIG_PATH = "/opt/aptos/etc/public_full_node.yaml"
 APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_LABEL = "pfn_config_files"
-APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_SOURCE_PATH = "github.com/kurtosis-tech/aptos-package/testnet-topology/public_full_node_config/public_full_node.yaml"
+APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_SOURCE_PATH = "./public_full_node_config/public_full_node.yaml"
 APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_TARGET_FILE = "public_full_node.yaml"
 APTOS_PUBLIC_FULL_NODE_CONFIG_FILES_TARGET_PATH = "/opt/aptos/etc"
 
